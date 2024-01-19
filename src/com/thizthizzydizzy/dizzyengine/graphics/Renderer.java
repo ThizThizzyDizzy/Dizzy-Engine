@@ -1,7 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
-import com.thizthizzydizzy.dizzyengine.gui.FlatGUI;
 import java.util.HashMap;
 import java.util.Stack;
 import org.joml.Matrix4f;

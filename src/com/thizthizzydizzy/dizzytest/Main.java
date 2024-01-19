@@ -1,13 +1,14 @@
 package com.thizthizzydizzy.dizzytest;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
+import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.gui.Component;
 import com.thizthizzydizzy.dizzyengine.gui.FlatGUI;
 import com.thizthizzydizzy.dizzyengine.gui.Menu;
 public class Main{
     public static void main(String[] args){
         DizzyEngine.init("DizzyEngine Test");
-        DizzyEngine.setWindowIcon("textures/icon.png");
+        DizzyEngine.setWindowIcon(new Image(48, 48));
         DizzyEngine.addLayer(new FlatGUI());
         new Menu(){
             {

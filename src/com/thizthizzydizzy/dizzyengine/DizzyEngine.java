@@ -1,16 +1,11 @@
 package com.thizthizzydizzy.dizzyengine;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
-import com.thizthizzydizzy.dizzyengine.gui.FlatGUI;
+import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
-import org.lwjgl.BufferUtils;
 import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
@@ -18,7 +13,6 @@ import org.lwjgl.opengl.GL;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL30.*;
-import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 public class DizzyEngine{
     private static long window;
@@ -88,7 +82,6 @@ public class DizzyEngine{
             for(var layer : layers)layer.init();
         }
         Logger.info("Initializing Input");
-        //TODO send input to all layers
         glfwSetCharCallback(window, (window, codepoint) -> {
             if(window==DizzyEngine.window)for(var layer : layers)layer.onChar(0, codepoint);
         });
@@ -189,18 +182,11 @@ public class DizzyEngine{
         Renderer.cleanupElements();
         glfwTerminate();
     }
-    public static void setWindowIcon(String path){//TODO don't use a String path, file loading should go in its own utility class (and be generalized between ByteBuffer/Image/etc types)
+    public static void setWindowIcon(Image image){
         Logger.push("DizzyEngine");
         Logger.info("Loading window icon");
-        try(GLFWImage.Buffer iconBuffer = GLFWImage.create(1); GLFWImage icon = GLFWImage.create(); InputStream input = ResourceManager.getInternalResource(path)){
-            IntBuffer iconWidth = BufferUtils.createIntBuffer(1);
-            IntBuffer iconHeight = BufferUtils.createIntBuffer(1);
-            ByteBuffer imageData = STBImage.stbi_load_from_memory(ResourceManager.loadData(input), iconWidth, iconHeight, BufferUtils.createIntBuffer(1), 4);
-            if(imageData==null){
-                Logger.error("Failed to load window icon: "+STBImage.stbi_failure_reason());
-                return;
-            }
-            icon.set(iconWidth.get(0), iconHeight.get(0), imageData);
+        try(GLFWImage.Buffer iconBuffer = GLFWImage.create(1); GLFWImage icon = GLFWImage.create()){
+            icon.set(image.getWidth(), image.getHeight(), image.getGLData());
             iconBuffer.put(icon);
             iconBuffer.rewind();
             glfwSetWindowIcon(window, iconBuffer);
