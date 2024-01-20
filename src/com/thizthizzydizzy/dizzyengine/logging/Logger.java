@@ -9,6 +9,7 @@ public class Logger{
     private static final HashMap<Thread, Stack<String>> sourceStacks = new HashMap<>();
     private static PrintStream logStream;
     private static PrintStream crashStream;
+    private static Thread crashThread;
     public static void init(){
         try{
             new File("logs").mkdir();
@@ -49,15 +50,15 @@ public class Logger{
         PrintStream out = type==MessageType.ERROR?System.err:System.out;
         var stack = getSourceStack();
         String source = stack.isEmpty()?null:stack.peek();
-        String err = "";
+        String err = message!=null?message+"\n":"";
         if(t!=null){
-            err = "\n"+t.getClass().getName()+": "+t.getMessage();
+            err += t.getClass().getName()+": "+t.getMessage();
             for(var stackTrace : t.getStackTrace())err += "\n"+stackTrace.toString();
         }
-        String line = LocalDateTime.now().toString()+" "+Thread.currentThread().getName()+" "+type.toString()+": "+(source!=null?"["+source+"] ":"")+message+err;
+        String line = LocalDateTime.now().toString()+" "+Thread.currentThread().getName()+" "+type.toString()+": "+(source!=null?"["+source+"] ":"")+err;
         out.println(line);
         if(logStream!=null)logStream.println(line);
-        if(crashStream!=null)crashStream.println(line);
+        if(crashStream!=null&&crashThread==Thread.currentThread())crashStream.println(line);
     }
     public static void info(String message, Throwable t){
         log(MessageType.INFO, message, t);
@@ -77,8 +78,12 @@ public class Logger{
     public static void error(String message){
         error(message, null);
     }
+    public static void error(Throwable t){
+        error(null, t);
+    }
     public static void setCrashLogFile(File file){
         try{
+            crashThread = Thread.currentThread();
             file.getParentFile().mkdir();
             crashStream = new PrintStream(file);
         }catch(FileNotFoundException ex){

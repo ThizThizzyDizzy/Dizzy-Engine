@@ -6,6 +6,7 @@ import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.function.Consumer;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import static org.lwjgl.glfw.GLFW.*;
@@ -17,17 +18,23 @@ import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL30.*;
 import org.lwjgl.system.MemoryUtil;
 public class DizzyEngine{
-    private static long window;
     public static final Vector2i screenSize = new Vector2i();
+    public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
+    private static long window;
     private static boolean windowSizeChanged;
     private static Framebuffer screenBuffer = null;
     private static final ArrayList<DizzyLayer> layers = new ArrayList<>();
-    public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
+    private static final ArrayList<UpdateThread> updateThreads = new ArrayList<>();
+    private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
+    private static boolean running;
     public static void init(String title){
         Logger.init();
         Thread mainThread = Thread.currentThread();
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
-            if(thread==mainThread){
+            boolean isCrash = thread==mainThread;
+            for(var t : updateThreads)if(thread==t.thread)isCrash = true;
+            if(isCrash){
+                running = false;
                 Logger.setCrashLogFile(new File("crash-reports", "crash-"+LocalDateTime.now().toString().replace(':', '-')+".log"));
                 Logger.push(DizzyEngine.class);
                 Logger.error("==== CRASH REPORT ====");
@@ -128,10 +135,26 @@ public class DizzyEngine{
         });
         Logger.pop();
     }
-    private static void wrapEvent(DizzyLayer layer, Runnable event){
-        Logger.push(layer);
-        event.run();
+    public static void setWindowIcon(Image image){
+        Logger.push("DizzyEngine");
+        Logger.info("Loading window icon");
+        try(GLFWImage.Buffer iconBuffer = GLFWImage.create(1); GLFWImage icon = GLFWImage.create()){
+            icon.set(image.getWidth(), image.getHeight(), image.getGLData());
+            iconBuffer.put(icon);
+            iconBuffer.rewind();
+            glfwSetWindowIcon(window, iconBuffer);
+        }catch(Exception ex){
+            Logger.error("Failed to load window icon!", ex);
+        }
         Logger.pop();
+    }
+    public static UpdateThread addFixedUpdateThread(String name, Consumer<Long> updateThread, int updateRate){
+        Logger.push("DizzyEngine");
+        Logger.info("Adding fixed update thread "+name+" at "+updateRate+" updates per second");
+        UpdateThread thread;
+        updateThreads.add(thread = new UpdateThread(name, updateThread, updateRate));
+        Logger.pop();
+        return thread;
     }
     public static void addLayer(DizzyLayer layer){
         synchronized(layers){
@@ -143,16 +166,23 @@ public class DizzyEngine{
             layers.remove(layer);
         }
     }
-    private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
+    private static void wrapEvent(DizzyLayer layer, Runnable event){
+        Logger.push(layer);
+        event.run();
+        Logger.pop();
+    }
     public static void start(){
+        running = true;
+        for(var thread : updateThreads)thread.start();
         double lastFrame = -1;
         Matrix4f windowProjectionMatrix = new Matrix4f();
-        while(true){
+        while(running){
             Logger.reset();
             Logger.push(DizzyEngine.class);
             if(glfwWindowShouldClose(window)){
                 Logger.info("Window closed!");
-                break;
+                running = false;
+                continue;
             }
             if(windowSizeChanged||screenBuffer==null){
                 windowSizeChanged = false;
@@ -205,18 +235,11 @@ public class DizzyEngine{
         glfwTerminate();
         Logger.cleanup();
     }
-    public static void setWindowIcon(Image image){
-        Logger.push("DizzyEngine");
-        Logger.info("Loading window icon");
-        try(GLFWImage.Buffer iconBuffer = GLFWImage.create(1); GLFWImage icon = GLFWImage.create()){
-            icon.set(image.getWidth(), image.getHeight(), image.getGLData());
-            iconBuffer.put(icon);
-            iconBuffer.rewind();
-            glfwSetWindowIcon(window, iconBuffer);
-        }catch(Exception ex){
-            Logger.error("Failed to load window icon!", ex);
-        }
-        Logger.pop();
+    public static void stop(){
+        running = false;
+    }
+    public static boolean isRunning(){
+        return running;
     }
     public static <T extends DizzyLayer> T getLayer(Class<T> clazz){
         T found = null;
