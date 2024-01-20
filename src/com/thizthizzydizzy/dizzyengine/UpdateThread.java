@@ -7,7 +7,7 @@ public class UpdateThread{
     private final long deltaTimeNanos;
     public long lastUpdate;
     private long updateCounter;
-    public UpdateThread(String name, Consumer<Long> func, int updateRate){
+    public UpdateThread(String name, Consumer<Long> func, Runnable cleanupFunc, int updateRate){
         this.func = func;
         deltaTimeNanos = 1_000_000_000l/updateRate;
         thread = new Thread(() -> {
@@ -28,6 +28,7 @@ public class UpdateThread{
                     }
                 }
             }
+            if(cleanupFunc!=null)cleanupFunc.run();
             Logger.info("Thread Stopped");
             Logger.pop();
         }, name);

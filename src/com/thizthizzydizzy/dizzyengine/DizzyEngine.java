@@ -148,18 +148,19 @@ public class DizzyEngine{
         }
         Logger.pop();
     }
-    public static UpdateThread addFixedUpdateThread(String name, Consumer<Long> updateThread, int updateRate){
+    public static UpdateThread addFixedUpdateThread(String name, Consumer<Long> updateThread, Runnable cleanupFunc, int updateRate){
         Logger.push("DizzyEngine");
         Logger.info("Adding fixed update thread "+name+" at "+updateRate+" updates per second");
         UpdateThread thread;
-        updateThreads.add(thread = new UpdateThread(name, updateThread, updateRate));
+        updateThreads.add(thread = new UpdateThread(name, updateThread, cleanupFunc, updateRate));
         Logger.pop();
         return thread;
     }
-    public static void addLayer(DizzyLayer layer){
+    public static <T extends DizzyLayer> T addLayer(T layer){
         synchronized(layers){
             layers.add(layer);
         }
+        return layer;
     }
     public static void removeLayer(DizzyLayer layer){
         synchronized(layers){

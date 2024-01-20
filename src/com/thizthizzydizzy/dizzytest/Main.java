@@ -11,7 +11,7 @@ public class Main{
     private static boolean tickCrash;
     public static void main(String[] args){
         DizzyEngine.init("DizzyEngine Test");
-        var tick = DizzyEngine.addFixedUpdateThread("Tick", Main::tick, 2);
+        var tick = DizzyEngine.addFixedUpdateThread("Tick", Main::tick, null, 2);
         DizzyEngine.setWindowIcon(new Image(48, 48));
         DizzyEngine.addLayer(new FlatGUI());
         new Menu(){
