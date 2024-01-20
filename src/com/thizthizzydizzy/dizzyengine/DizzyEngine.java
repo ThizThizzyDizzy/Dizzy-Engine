@@ -22,7 +22,11 @@ public class DizzyEngine{
     private static final ArrayList<DizzyLayer> layers = new ArrayList<>();
     public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
     public static void init(String title){
+        Thread mainThread = Thread.currentThread();
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
+            if(thread==mainThread){
+                Logger.error("===== GAME CRASH =====");//TODO write crash report to a file
+            }
             Logger.error("Uncaught Exception in Thread "+thread.getName()+":", ex);
         });
         Logger.push("INIT");

@@ -29,7 +29,7 @@ public class Logger{
     public static void reset(){
         getSourceStack().clear();
     }
-    public static void log(MessageType type, String message, Throwable t){
+    public static void log(MessageType type, String message, Throwable t){//TODO log to a file
         PrintStream out = type==MessageType.ERROR?System.err:System.out;
         String source = getSourceStack().peek();
         String err = "";

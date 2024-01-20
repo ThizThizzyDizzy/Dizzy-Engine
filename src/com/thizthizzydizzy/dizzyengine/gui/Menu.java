@@ -2,7 +2,10 @@ package com.thizthizzydizzy.dizzyengine.gui;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 public class Menu extends Component{
     public void open(){
-        DizzyEngine.getLayer(FlatGUI.class).open(this);
+        open(DizzyEngine.getLayer(FlatGUI.class));
+    }
+    public void open(FlatGUI gui){
+        gui.open(this);
     }
     public void onMenuOpened(){}
     public void onMenuClosed(){}
