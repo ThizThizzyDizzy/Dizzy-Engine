@@ -3,6 +3,8 @@ import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import java.io.File;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
@@ -22,10 +24,21 @@ public class DizzyEngine{
     private static final ArrayList<DizzyLayer> layers = new ArrayList<>();
     public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
     public static void init(String title){
+        Logger.init();
         Thread mainThread = Thread.currentThread();
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             if(thread==mainThread){
-                Logger.error("===== GAME CRASH =====");//TODO write crash report to a file
+                Logger.setCrashLogFile(new File("crash-reports", "crash-"+LocalDateTime.now().toString().replace(':', '-')+".log"));
+                Logger.push(DizzyEngine.class);
+                Logger.error("==== CRASH REPORT ====");
+                Logger.error(title);
+                Logger.error("Layers:");
+                for(var layer : layers)Logger.error("- "+layer.getClass().getName());
+                Logger.error("Logger Stack:");
+                var stack = Logger.getSourceStack();
+                for(int i = 0; i<stack.size()-1; i++)Logger.error("- "+stack.get(i));
+                Logger.error("===== GAME CRASH =====");
+                Logger.pop();
             }
             Logger.error("Uncaught Exception in Thread "+thread.getName()+":", ex);
         });
@@ -87,32 +100,37 @@ public class DizzyEngine{
         }
         Logger.info("Initializing Input");
         glfwSetCharCallback(window, (window, codepoint) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onChar(0, codepoint);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onChar(0, codepoint));
         });
         glfwSetCharModsCallback(window, (window, codepoint, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onCharMods(0, codepoint, mods);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCharMods(0, codepoint, mods));
         });
         glfwSetCursorEnterCallback(window, (window, entered) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onCursorEnter(0, entered);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCursorEnter(0, entered));
         });
         glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onCursorPos(0, xpos, ypos);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCursorPos(0, xpos, ypos));
         });
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onKey(0, key, scancode, action, mods);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onKey(0, key, scancode, action, mods));
         });
         glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onMouseButton(0, button, action, mods);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onMouseButton(0, button, action, mods));
         });
         glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onScroll(0, xoffset, yoffset);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onScroll(0, xoffset, yoffset));
         });
         glfwSetDropCallback(window, (window, count, names) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)layer.onDrop(0, count, names);
+            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onDrop(0, count, names));
         });
         glfwSetJoystickCallback((jid, event) -> {
-            for(var layer : layers)layer.onJoystick(0, jid, event);
+            for(var layer : layers)wrapEvent(layer, ()->layer.onJoystick(0, jid, event));
         });
+        Logger.pop();
+    }
+    private static void wrapEvent(DizzyLayer layer, Runnable event){
+        Logger.push(layer);
+        event.run();
         Logger.pop();
     }
     public static void addLayer(DizzyLayer layer){
@@ -185,6 +203,7 @@ public class DizzyEngine{
         screenBuffer.destroy();
         Renderer.cleanupElements();
         glfwTerminate();
+        Logger.cleanup();
     }
     public static void setWindowIcon(Image image){
         Logger.push("DizzyEngine");
