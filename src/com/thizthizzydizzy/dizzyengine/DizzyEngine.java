@@ -1,4 +1,6 @@
 package com.thizthizzydizzy.dizzyengine;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
@@ -20,6 +22,7 @@ import org.lwjgl.system.MemoryUtil;
 public class DizzyEngine{
     public static final Vector2i screenSize = new Vector2i();
     public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
+    public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static long window;
     private static boolean windowSizeChanged;
     private static Framebuffer screenBuffer = null;
