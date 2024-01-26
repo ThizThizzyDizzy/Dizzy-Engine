@@ -11,9 +11,21 @@ import static org.lwjgl.opengl.GL30.*;
 public class Renderer{
     private static Shader defaultShader;
     private static Shader shader;
+    private static Font defaultFont;
+    private static Font font;
     private static Stack<Bound> boundStack = new Stack<>();
     private static Matrix4fStack modelMatStack = new Matrix4fStack(64);
     private static final HashMap<String, Element> elements = new HashMap<>();
+    public static void setDefaultFont(Font f){
+        defaultFont = f;
+        if(font==null)font = f;
+    }
+    public static void setFont(Font f){
+        font = f;
+    }
+    public static void resetFont(){
+        font = defaultFont;
+    }
     static{
         elements.put("rect", new Element(){
             public int vao, vbo, ebo;
@@ -94,6 +106,43 @@ public class Renderer{
         }
         bindTexture(texture);
         drawElement("rect", left, top, right-left, bottom-top);
+    }
+    public static void drawText(float x, float y, String text, float height){
+        if(height<0)return;
+        bindTexture(font.texture);
+        for(int i = 0; i<text.length(); i++){
+            char c = text.charAt(i);
+            if(c=='\n'){
+                if(i==text.length()-1)continue;//last character of string, ignore
+                throw new IllegalArgumentException("Cannot draw newline character!");
+            }
+            FontCharacter character = font.getCharacter(c);
+            if(character==null){
+                System.err.println("Unknown font character: "+c);
+                character = font.getCharacter('?');
+            }
+            model(createModelMatrix(x, y+height, height, height));
+            character.draw();
+            x+=character.dx/font.height*height;
+            y+=character.dy/font.height*height;
+        }
+        resetModelMatrix();
+    }
+    public static void drawCenteredText(float left, float top, float right, float bottom, String text){
+        float width = font.getStringWidth(text, bottom-top);
+        while(width>right-left&&!text.isEmpty()){
+            text = text.substring(0, text.length()-1);
+            width = font.getStringWidth(text, bottom-top);
+        }
+        drawText((left+right)/2-width/2, top, text, bottom-top);
+    }
+    public static void drawText(float left, float top, float right, float bottom, String text){
+        float width = font.getStringWidth(text, bottom-top);
+        while(width>right-left&&!text.isEmpty()){
+            text = text.substring(0, text.length()-1);
+            width = font.getStringWidth(text, bottom-top);
+        }
+        drawText(left, top, text, bottom-top);
     }
     public static void setColor(Color c){
         setColor(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f, c.getAlpha()/255f);
