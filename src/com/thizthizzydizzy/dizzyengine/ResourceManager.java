@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine;
+import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,10 @@ public class ResourceManager{
         }
     }
     private static HashMap<String, Integer> texturesCache = new HashMap<>();
+    private static Image missingTexture = new Image(1, 1);
+    static{
+        missingTexture.setRGB(0, 0, Color.MAGENTA.getRGB());
+    }
     public static int getTexture(String path){
         if(texturesCache.containsKey(path))return texturesCache.get(path);
         //read image
@@ -42,6 +47,10 @@ public class ResourceManager{
         IntBuffer width = BufferUtils.createIntBuffer(1);
         IntBuffer height = BufferUtils.createIntBuffer(1);
         try(InputStream input = getInternalResource(path)){
+            if(input==null){
+                Logger.error("Could not find texture: "+path+"!");
+                return getTexture(missingTexture);
+            }
             imageData = stbi_load_from_memory(loadData(input), width, height, BufferUtils.createIntBuffer(1), 4);
         }catch(IOException ex){
             Logger.error(ex);

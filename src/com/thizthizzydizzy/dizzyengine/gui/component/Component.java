@@ -1,4 +1,4 @@
-package com.thizthizzydizzy.dizzyengine.gui;
+package com.thizthizzydizzy.dizzyengine.gui.component;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import java.util.ArrayList;
@@ -77,13 +77,13 @@ public class Component{
     }
     public void onAdded(){
     }
-    protected void onChar(int id, int codepoint){
+    public void onChar(int id, int codepoint){
         if(focusedComponent[id]!=null)focusedComponent[id].onChar(id, codepoint);
     }
-    protected void onCharMods(int id, int codepoint, int mods){
+    public void onCharMods(int id, int codepoint, int mods){
         if(focusedComponent[id]!=null)focusedComponent[id].onCharMods(id, codepoint, mods);
     }
-    protected void onCursorPos(int id, double xpos, double ypos){
+    public void onCursorPos(int id, double xpos, double ypos){
         boolean foundFocus = false;
         for(var c : components){
             if(c.focusable&&xpos>=c.x&&ypos>=c.y&&xpos<c.x+c.size.x&&ypos<c.y+c.size.y){
@@ -108,10 +108,10 @@ public class Component{
         }
         if(cursorFocusedComponent[id]!=null)cursorFocusedComponent[id].onCursorPos(id, xpos-cursorFocusedComponent[id].x, ypos-cursorFocusedComponent[id].y);
     }
-    protected void onKey(int id, int key, int scancode, int action, int mods){
+    public void onKey(int id, int key, int scancode, int action, int mods){
         if(focusedComponent[id]!=null)focusedComponent[id].onKey(id, key, scancode, action, mods);
     }
-    protected void onMouseButton(int id, Vector2d pos, int button, int action, int mods){
+    public void onMouseButton(int id, Vector2d pos, int button, int action, int mods){
         if(cursorFocusedComponent[id]!=null){
             //adjust focus
             if(action==GLFW_RELEASE&&focusedComponent[id]!=null){//send focused component release event, even if no longer cursor focused
@@ -132,30 +132,30 @@ public class Component{
             cursorFocusedComponent[id].onMouseButton(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), button, action, mods);
         }
     }
-    protected boolean onScroll(int id, Vector2d pos, double dx, double dy){
+    public boolean onScroll(int id, Vector2d pos, double dx, double dy){
         if(cursorFocusedComponent[id]!=null)return cursorFocusedComponent[id].onScroll(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), dx, dy);
         return false;
     }
-    protected void onDrop(int id, Vector2d pos, int count, long names){
+    public void onDrop(int id, Vector2d pos, int count, long names){
         if(cursorFocusedComponent[id]!=null)cursorFocusedComponent[id].onDrop(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), count, names);
     }
-    protected void onJoystick(int id, int jid, int event){
+    public void onJoystick(int id, int jid, int event){
         if(focusedComponent[id]!=null)focusedComponent[id].onJoystick(id, jid, event);
     }
-    protected void onResize(Vector2f size){
+    public void onResize(Vector2f size){
     }
-    protected void onCursorFocusGained(int id){
+    public void onCursorFocusGained(int id){
     }
-    protected void onCursorFocusLost(int id){
+    public void onCursorFocusLost(int id){
         if(cursorFocusedComponent[id]!=null){
             cursorFocusedComponent[id].isCursorFocused[id] = false;
             cursorFocusedComponent[id].onCursorFocusLost(id);
             cursorFocusedComponent[id] = null;
         }
     }
-    protected void onFocusGained(int id){
+    public void onFocusGained(int id){
     }
-    protected void onFocusLost(int id){
+    public void onFocusLost(int id){
         if(focusedComponent[id]!=null){
             focusedComponent[id].isFocused[id] = false;
             focusedComponent[id].onFocusLost(id);

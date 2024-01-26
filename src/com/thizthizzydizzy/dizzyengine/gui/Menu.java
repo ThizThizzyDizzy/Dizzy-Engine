@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.gui;
+import com.thizthizzydizzy.dizzyengine.gui.component.Component;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 public class Menu extends Component{
     public void open(){
