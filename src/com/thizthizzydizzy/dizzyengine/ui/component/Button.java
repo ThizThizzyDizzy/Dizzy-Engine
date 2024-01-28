@@ -9,9 +9,10 @@ public class Button extends Component{
     public boolean enabled;
     public ComponentLayer background = getUIContext().getDefaultComponentBackground(Button.class);
     public ComponentLabel label = getUIContext().getDefaultComponentLabel(Button.class);
-    private boolean pressed;
+    public boolean pressed;
     private final ArrayList<Runnable> actions = new ArrayList<>();
-    public Button(){}
+    public Button(){
+    }
     public Button(String text){
         this(text, true);
     }
@@ -21,8 +22,8 @@ public class Button extends Component{
     }
     @Override
     public void draw(double deltaTime){
-        if(background!=null)background.draw(x, y, getSize(), deltaTime);
-        if(label!=null)label.draw(x, y, getSize(), deltaTime);
+        if(background!=null)background.draw(this, deltaTime);
+        if(label!=null)label.draw(this, deltaTime);
     }
     @Override
     public void onMouseButton(int id, Vector2d pos, int button, int action, int mods){

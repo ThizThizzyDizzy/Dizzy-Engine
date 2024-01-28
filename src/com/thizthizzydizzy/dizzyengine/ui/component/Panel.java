@@ -7,7 +7,7 @@ public class Panel extends Component{
     public Layout layout;
     @Override
     public void draw(double deltaTime){
-        if(background!=null)background.draw(x, y, getSize(), deltaTime);
+        if(background!=null)background.draw(this, deltaTime);
     }
     public <T extends Layout> T setLayout(T layout){
         this.layout = layout;
