@@ -129,20 +129,23 @@ public class Renderer{
         resetModelMatrix();
     }
     public static void drawCenteredText(float left, float top, float right, float bottom, String text){
-        float width = font.getStringWidth(text, bottom-top);
+        float width = getStringWidth(text, bottom-top);
         while(width>right-left&&!text.isEmpty()){
             text = text.substring(0, text.length()-1);
-            width = font.getStringWidth(text, bottom-top);
+            width = getStringWidth(text, bottom-top);
         }
         drawText((left+right)/2-width/2, top, text, bottom-top);
     }
     public static void drawText(float left, float top, float right, float bottom, String text){
-        float width = font.getStringWidth(text, bottom-top);
+        float width = getStringWidth(text, bottom-top);
         while(width>right-left&&!text.isEmpty()){
             text = text.substring(0, text.length()-1);
-            width = font.getStringWidth(text, bottom-top);
+            width = getStringWidth(text, bottom-top);
         }
         drawText(left, top, text, bottom-top);
+    }
+    public static float getStringWidth(String text, float height){
+        return font.getStringWidth(text, height);
     }
     public static void setColor(Color c){
         setColor(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f, c.getAlpha()/255f);

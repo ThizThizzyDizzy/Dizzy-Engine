@@ -1,15 +1,15 @@
-package com.thizthizzydizzy.dizzyengine.gui.component;
+package com.thizthizzydizzy.dizzyengine.ui.component;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
+import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.util.ArrayList;
 import org.joml.Vector2d;
 import org.joml.Vector2f;
-import org.joml.Vector2fc;
 import static org.lwjgl.glfw.GLFW.*;
 public class Component{
     public Component parent;
     public float x, y;
-    public final Vector2f size;
+    private final Vector2f size = new Vector2f(0, 0);
     public boolean[] isFocused = new boolean[DizzyEngine.CURSOR_LIMIT];
     public boolean[] isCursorFocused = new boolean[DizzyEngine.CURSOR_LIMIT];
     public Component[] focusedComponent = new Component[DizzyEngine.CURSOR_LIMIT];
@@ -32,33 +32,6 @@ public class Component{
             return super.remove(o);
         }
     };
-    public Component(){
-        this(0, 0, 0, 0);
-    }
-    public Component(float x, float y, float width, float height){
-        this.x = x;
-        this.y = y;
-        this.size = new Vector2f(width, height){
-            @Override
-            public Vector2f set(float x, float y){
-                super.set(x, y);
-                onResize(this);
-                return this;
-            }
-            @Override
-            public Vector2f set(Vector2fc v){
-                super.set(v);
-                onResize(this);
-                return this;
-            }
-            @Override
-            public Vector2f set(double x, double y){
-                super.set(x, y);
-                onResize(this);
-                return this;
-            }
-        };
-    }
     public void render(double deltaTime){
         Renderer.bound(x, y, x+size.x, y+size.y);
         draw(deltaTime);
@@ -161,5 +134,41 @@ public class Component{
             focusedComponent[id].onFocusLost(id);
             focusedComponent[id] = null;
         }
+    }
+    public Vector2f getSize(){
+        return new Vector2f(size);
+    }
+    public float getWidth(){
+        return size.x;
+    }
+    public float getHeight(){
+        return size.y;
+    }
+    public void setSize(Vector2f size){
+        setSize(size.x, size.y);
+    }
+    public void setSize(float width, float height){
+        size.set(width, height);
+        onResize(size);
+    }
+    public void setWidth(float width){
+        size.y = width;
+        onResize(size);
+    }
+    public void setHeight(float height){
+        size.y = height;
+        onResize(size);
+    }
+    public Vector2f getPreferredSize(){
+        return size;
+    }
+    public float getPreferredWidth(){
+        return getPreferredSize().x;
+    }
+    public float getPreferredHeight(){
+        return getPreferredSize().y;
+    }
+    protected static UILayer getUIContext(){
+        return DizzyEngine.getUIContext();
     }
 }

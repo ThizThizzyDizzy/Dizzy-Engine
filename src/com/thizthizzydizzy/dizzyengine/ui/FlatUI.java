@@ -1,15 +1,11 @@
-package com.thizthizzydizzy.dizzyengine.gui;
+package com.thizthizzydizzy.dizzyengine.ui;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
-import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
-import org.joml.Vector2f;
 import org.joml.Vector2i;
 import static org.lwjgl.opengl.GL11.*;
-public class FlatGUI extends DizzyLayer{
-    public Menu menu;
-    public final Vector2f size = new Vector2f();
+public class FlatUI extends UILayer{
     public final Vector2d[] cursorPosition = new Vector2d[DizzyEngine.CURSOR_LIMIT];
     private final Matrix4f viewMatrix = new Matrix4f().setTranslation(0, 0, -5);
     private final Matrix4f projectionMatrix = new Matrix4f();
@@ -27,15 +23,6 @@ public class FlatGUI extends DizzyLayer{
     }
     @Override
     public void cleanup(){
-    }
-    public <T extends Menu> T open(T menu){
-        if(this.menu!=null)this.menu.onMenuClosed();
-        this.menu = menu;
-        if(menu!=null){
-            menu.size.set(size);
-            menu.onMenuOpened();
-        }
-        return menu;
     }
     @Override
     protected void onChar(int id, int codepoint){
@@ -82,7 +69,11 @@ public class FlatGUI extends DizzyLayer{
     @Override
     protected void onScreenSize(Vector2i screenSize){
         size.set(screenSize);
-        if(menu!=null)menu.size.set(size);
+        if(menu!=null)menu.setSize(size);
         projectionMatrix.setOrtho(0, size.x, size.y, 0, 0.1f, 10f);
+    }
+    @Override
+    public float getUnitScale(){
+        return 1;
     }
 }

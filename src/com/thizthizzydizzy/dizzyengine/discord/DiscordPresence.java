@@ -43,4 +43,8 @@ public class DiscordPresence{
         richPresence.endTimestamp = end;
         updateNeeded = true;
     }
+    public static void setEndTimestamp(long end){
+        richPresence.endTimestamp = end;
+        updateNeeded = true;
+    }
 }

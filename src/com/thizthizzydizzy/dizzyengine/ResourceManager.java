@@ -43,6 +43,7 @@ public class ResourceManager{
     public static int getTexture(String path){
         if(texturesCache.containsKey(path))return texturesCache.get(path);
         //read image
+        stbi_set_flip_vertically_on_load(true);
         ByteBuffer imageData = null;
         IntBuffer width = BufferUtils.createIntBuffer(1);
         IntBuffer height = BufferUtils.createIntBuffer(1);
@@ -60,6 +61,7 @@ public class ResourceManager{
         int texture = loadGLTexture(width.get(0), height.get(0), imageData);
         stbi_image_free(imageData);
         texturesCache.put(path, texture);
+        stbi_set_flip_vertically_on_load(false);
         return texture;
     }
     public static int loadGLTexture(int width, int height, ByteBuffer imageData){

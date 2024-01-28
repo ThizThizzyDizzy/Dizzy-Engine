@@ -5,6 +5,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,9 +31,11 @@ public class DizzyEngine{
     private static final ArrayList<UpdateThread> updateThreads = new ArrayList<>();
     private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
     private static boolean running;
+    private static UILayer currentUIContext;
+    private static Thread mainThread;
     public static void init(String title){
         Logger.init();
-        Thread mainThread = Thread.currentThread();
+        mainThread = Thread.currentThread();
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             boolean isCrash = thread==mainThread;
             for(var t : updateThreads)if(thread==t.thread)isCrash = true;
@@ -106,7 +109,7 @@ public class DizzyEngine{
         Renderer.setDefaultShader(new Shader("vert.shader", "frag.shader"));
         Logger.info("Initializing Layers");
         synchronized(layers){
-            for(var layer : layers)layer.init();
+            for(var layer : layers)wrapEvent(layer, layer::init);
         }
         Logger.info("Initializing Input");
         glfwSetCharCallback(window, (window, codepoint) -> {
@@ -162,17 +165,21 @@ public class DizzyEngine{
     public static <T extends DizzyLayer> T addLayer(T layer){
         synchronized(layers){
             layers.add(layer);
+            if(layer instanceof UILayer ui)currentUIContext = ui;//required for opening default menus during initialization
         }
         return layer;
     }
     public static void removeLayer(DizzyLayer layer){
         synchronized(layers){
             layers.remove(layer);
+            if(currentUIContext==layer)currentUIContext = null;
         }
     }
     private static void wrapEvent(DizzyLayer layer, Runnable event){
         Logger.push(layer);
+        if(layer instanceof UILayer ui)currentUIContext = ui;
         event.run();
+        currentUIContext = null;
         Logger.pop();
     }
     public static void start(){
@@ -195,14 +202,13 @@ public class DizzyEngine{
                 }
                 screenBuffer = new Framebuffer(screenSize.x, screenSize.y);
                 synchronized(layers){
-                    for(var layer : layers)layer.onScreenSize(screenSize);
+                    for(var layer : layers)wrapEvent(layer, ()->layer.onScreenSize(screenSize));
                 }
                 windowProjectionMatrix.setOrtho(0, screenSize.x, screenSize.y, 0, 0.1f, 10f);
             }
             //deltaTime
-            double deltaTime = 0;
             double time = glfwGetTime();
-            if(lastFrame>-1)deltaTime = time-lastFrame;
+            double deltaTime = lastFrame>-1?time-lastFrame:0;
             lastFrame = time;
             //reset rendering
             screenBuffer.bind();
@@ -218,9 +224,7 @@ public class DizzyEngine{
                 for(var layer : layers){
                     screenBuffer.bind();//just in case it was changed
                     Renderer.reset();
-                    Logger.push(layer);
-                    layer.render(deltaTime);
-                    Logger.pop();
+                    wrapEvent(layer, ()->layer.render(deltaTime));
                 }
                 Renderer.reset();
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -256,5 +260,10 @@ public class DizzyEngine{
             }
         }
         return found;
+    }
+    public static UILayer getUIContext(){
+        if(Thread.currentThread()!=mainThread)Logger.warn("UI context was accessed outside the main thread!");
+        if(currentUIContext==null)throw new UnsupportedOperationException("No UI context found!");
+        return currentUIContext;
     }
 }
