@@ -103,6 +103,8 @@ public class Component{
             }
             //focus is adjusted, now pass along mouse button
             cursorFocusedComponent[id].onMouseButton(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), button, action, mods);
+        }else if(action==GLFW_RELEASE&&focusedComponent[id]!=null){
+            focusedComponent[id].onMouseButton(id, new Vector2d(pos.x-focusedComponent[id].x, pos.y-focusedComponent[id].y), button, action, mods);
         }
     }
     public boolean onScroll(int id, Vector2d pos, double dx, double dy){
