@@ -6,7 +6,7 @@ import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
 public class Button extends Component{
     public static boolean ACT_ON_PRESS = false;//TODO should this be moved to the ui context?
-    public boolean enabled;
+    public boolean enabled = true;
     public ComponentLayer background = getUIContext().getDefaultComponentBackground(Button.class);
     public ComponentLabel label = getUIContext().getDefaultComponentLabel(Button.class);
     public boolean pressed;

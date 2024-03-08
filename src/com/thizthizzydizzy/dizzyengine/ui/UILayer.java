@@ -1,6 +1,7 @@
 package com.thizthizzydizzy.dizzyengine.ui;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
+import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ public abstract class UILayer extends DizzyLayer{
     public final Vector2f size = new Vector2f();
     private HashMap<Class<? extends Component>, Supplier<ComponentLayer>> defaultComponentBackgrounds = new HashMap<>();
     private HashMap<Class<? extends Component>, Supplier<ComponentLabel>> defaultComponentLabels = new HashMap<>();
+    private HashMap<Class<? extends Component>, Supplier<ComponentHandle>> defaultComponentHandles = new HashMap<>();
     public <T extends Menu> T open(T menu){
         if(this.menu!=null)this.menu.onMenuClosed();
         this.menu = menu;
@@ -34,6 +36,9 @@ public abstract class UILayer extends DizzyLayer{
     public ComponentLabel getDefaultComponentLabel(){
         return getDefaultComponentLabel(null);
     }
+    public ComponentHandle getDefaultComponentHandle(){
+        return getDefaultComponentHandle(null);
+    }
     public ComponentLayer getDefaultComponentBackground(Class<? extends Component> clazz){
         var supplier = defaultComponentBackgrounds.get(clazz);
         if(supplier==null)supplier = defaultComponentBackgrounds.get(null);
@@ -46,16 +51,28 @@ public abstract class UILayer extends DizzyLayer{
         if(supplier==null)return null;
         return supplier.get();
     }
+    public ComponentHandle getDefaultComponentHandle(Class<? extends Component> clazz){
+        var supplier = defaultComponentHandles.get(clazz);
+        if(supplier==null)supplier = defaultComponentHandles.get(null);
+        if(supplier==null)return null;
+        return supplier.get();
+    }
     public void setDefaultComponentBackground(Supplier<ComponentLayer> layer){
         setDefaultComponentBackground(null, layer);
     }
     public void setDefaultComponentLabel(Supplier<ComponentLabel> layer){
         setDefaultComponentLabel(null, layer);
     }
+    public void setDefaultComponentHandle(Supplier<ComponentHandle> layer){
+        setDefaultComponentHandle(null, layer);
+    }
     public void setDefaultComponentBackground(Class<? extends Component> clazz, Supplier<ComponentLayer> layer){
         defaultComponentBackgrounds.put(clazz, layer);
     }
     public void setDefaultComponentLabel(Class<? extends Component> clazz, Supplier<ComponentLabel> layer){
         defaultComponentLabels.put(clazz, layer);
+    }
+    public void setDefaultComponentHandle(Class<? extends Component> clazz, Supplier<ComponentHandle> layer){
+        defaultComponentHandles.put(clazz, layer);
     }
 }
