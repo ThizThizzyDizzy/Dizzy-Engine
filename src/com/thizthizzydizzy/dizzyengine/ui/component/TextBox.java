@@ -9,6 +9,7 @@ public class TextBox extends Component{
     private final ArrayList<Runnable> actions = new ArrayList<>();
     private String text;
     public boolean editable = true;
+    public boolean runActionsOnTextChange = false;
     public TextBox(){
     }
     public TextBox(String text){
@@ -30,6 +31,7 @@ public class TextBox extends Component{
         if(!editable)return;
         if(action==GLFW_PRESS||action==GLFW_REPEAT){
             if(key==GLFW_KEY_BACKSPACE&&!text.isEmpty())setText(text.substring(0, text.length()-1));//TODO allow cursor moving
+            if(key==GLFW_KEY_ENTER&&!runActionsOnTextChange)runActions();
         }
     }
     public void runActions(){
@@ -49,5 +51,6 @@ public class TextBox extends Component{
     public void setText(String text){
         this.text = text;
         label.setLabel(text);
+        if(runActionsOnTextChange)runActions();
     }
 }
