@@ -266,4 +266,7 @@ public class DizzyEngine{
         if(currentUIContext==null)throw new UnsupportedOperationException("No UI context found!");
         return currentUIContext;
     }
+    public static boolean isKeyDown(int key){
+        return glfwGetKey(window, key)==GLFW_PRESS;
+    }
 }

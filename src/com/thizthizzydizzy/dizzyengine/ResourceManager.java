@@ -41,6 +41,7 @@ public class ResourceManager{
         missingTexture.setRGB(0, 0, Color.MAGENTA.getRGB());
     }
     public static int getTexture(String path){
+        if(path==null)return getTexture(missingTexture);
         if(texturesCache.containsKey(path))return texturesCache.get(path);
         //read image
         stbi_set_flip_vertically_on_load(true);

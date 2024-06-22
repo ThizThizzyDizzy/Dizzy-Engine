@@ -1,6 +1,7 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
+import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.HashMap;
 import java.util.Stack;
 import org.joml.Matrix4f;
@@ -27,7 +28,10 @@ public class Renderer{
         font = defaultFont;
     }
     static{
-        elements.put("rect", new Element(){
+        elements.put("rect", createRectangleElement(0, 0, 1, 1));
+    }
+    private static Element createRectangleElement(float left, float top, float right, float bottom){
+        return new Element(){
             public int vao, vbo, ebo;
             @Override
             public void init(){
@@ -36,10 +40,10 @@ public class Renderer{
                 ebo = glGenBuffers();
 
                 float[] verticies = new float[]{
-                    0, 0, 0, 0, 0, 1, 0, 1,//top left
-                    0, 1, 0, 0, 0, 1, 0, 0,//bottom left
-                    1, 0, 0, 0, 0, 1, 1, 1,//top right
-                    1, 1, 0, 0, 0, 1, 1, 0//bottom right
+                    0, 0, 0, 0, 0, 1, left, bottom,//top left
+                    0, 1, 0, 0, 0, 1, left, top,//bottom left
+                    1, 0, 0, 0, 0, 1, right, bottom,//top right
+                    1, 1, 0, 0, 0, 1, right, top//bottom right
                 };
                 int[] indicies = new int[]{
                     1, 0, 2,
@@ -80,7 +84,7 @@ public class Renderer{
                 glDeleteBuffers(vbo);
                 glDeleteVertexArrays(vao);
             }
-        });
+        };
     }
     public static void initElements(){
         for(Element e : elements.values())e.init();
@@ -107,6 +111,22 @@ public class Renderer{
         bindTexture(texture);
         drawElement("rect", left, top, right-left, bottom-top);
     }
+    public static void fillRect(float left, float top, float right, float bottom, int texture, float texLeft, float texTop, float texRight, float texBottom){
+        if(right<left){
+            float r = left;
+            float l = right;
+            right = r;
+            left = l;
+        }
+        if(bottom<top){
+            float b = top;
+            float t = bottom;
+            bottom = b;
+            top = t;
+        }
+        bindTexture(texture);
+        drawElement(createRectangleElement(texLeft, texTop, texRight, texBottom), left, top, right-left, bottom-top);
+    }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
         bindTexture(font.texture);
@@ -123,8 +143,8 @@ public class Renderer{
             }
             model(createModelMatrix(x, y+height, height, height));
             character.draw();
-            x+=character.dx/font.height*height;
-            y+=character.dy/font.height*height;
+            x += character.dx/font.height*height;
+            y += character.dy/font.height*height;
         }
         resetModelMatrix();
     }
@@ -200,9 +220,11 @@ public class Renderer{
     public static void bindTexture(int tex){
         glBindTexture(GL_TEXTURE_2D, tex);
         if(tex==0)shader.setUniform4f("noTex", 1f, 1f, 1f, 0f);
-        else shader.setUniform4f("noTex", 0f, 0f, 0f, 0f);
+        else
+            shader.setUniform4f("noTex", 0f, 0f, 0f, 0f);
     }
     public static void bound(float left, float top, float right, float bottom){
+        if(boundStack.size()>=1024)throw new StackOverflowError("Exceeded render  bound stack limit! ("+boundStack.size()+")");
         boundStack.push(new Bound(modelMatStack.get(new Matrix4f())){
             @Override
             void draw(){
@@ -260,6 +282,7 @@ public class Renderer{
         resetModelMatrix();
     }
     public static void clearBounds(){
+        if(!boundStack.isEmpty())Logger.warn("Found "+boundStack.size()+" bounds after frame render! Clearing stencil...");
         boundStack.clear();
         redrawStencil();
     }
@@ -281,6 +304,17 @@ public class Renderer{
     private static void drawElement(String name){
         if(!elements.containsKey(name))throw new IllegalArgumentException("Cannot draw element: "+name+" does not exist!");
         elements.get(name).draw();
+    }
+    public static void drawElement(Element element, float x, float y, float width, float height){
+        drawElement(element, x, y, 1, width, height, 1);
+    }
+    public static void drawElement(Element element, float x, float y, float z, float width, float height, float depth){
+        model(new Matrix4f().setTranslation(x, y, z).scale(width, height, depth));
+        drawElement(element);
+        resetModelMatrix();
+    }
+    private static void drawElement(Element element){
+        element.draw();
     }
     public static void reset(){
         setShader(defaultShader);

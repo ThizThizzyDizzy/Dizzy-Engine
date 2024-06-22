@@ -170,6 +170,14 @@ public class Component{
     public float getPreferredHeight(){
         return getPreferredSize().y;
     }
+    public boolean isCursorFocused(){
+        for(boolean b : isCursorFocused)if(b)return true;
+        return false;
+    }
+    public boolean isFocused(){
+        for(boolean b : isFocused)if(b)return true;
+        return false;
+    }
     protected static UILayer getUIContext(){
         return DizzyEngine.getUIContext();
     }

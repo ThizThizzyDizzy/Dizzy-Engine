@@ -66,7 +66,7 @@ public class SoundSource{
         currentSound = null;
     }
     
-    private int getState(){
+    public int getState(){
         return alGetSourcei(id, AL_SOURCE_STATE);
     }
     private void startPlaying(Sound sound){
@@ -107,5 +107,11 @@ public class SoundSource{
         if(currentSound==null&&!soundQueue.isEmpty()){
             startPlaying(soundQueue.remove(0));
         }
+    }
+    public void play(){
+        AL10.alSourcePlay(id);
+    }
+    public void pause(){
+        AL10.alSourcePause(id);
     }
 }
