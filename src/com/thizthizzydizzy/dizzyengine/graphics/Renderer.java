@@ -286,6 +286,9 @@ public class Renderer{
         boundStack.clear();
         redrawStencil();
     }
+    public static float getPreferredTextHeight(){
+        return DizzyEngine.getUIContext().getUnitScale()*24;
+    }
     private static abstract class Bound{
         private final Matrix4f modelMatrix;
         public Bound(Matrix4f modelMatrix){

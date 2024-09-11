@@ -23,4 +23,10 @@ public class Panel extends Component{
     public void onResize(Vector2f size){
         if(layout!=null)layout.arrangeComponents(this);
     }
+    @Override
+    public <T extends Component> T add(T component){
+        var ret = super.add(component);
+        layout.arrangeComponents(this);
+        return ret;
+    }
 }

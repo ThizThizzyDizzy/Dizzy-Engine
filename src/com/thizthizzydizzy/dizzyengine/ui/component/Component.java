@@ -33,12 +33,12 @@ public class Component{
         }
     };
     public void render(double deltaTime){
-        Renderer.bound(x, y, x+size.x, y+size.y);
+//        Renderer.bound(x, y, x+size.x, y+size.y); //TODO fix bound- this doesn't work with BorderLayout for some reason
         draw(deltaTime);
         Renderer.translate(x, y);
         for(var c : components)c.render(deltaTime);
         Renderer.unTranslate();
-        Renderer.unBound();
+//        Renderer.unBound();
     }
     public void draw(double deltaTime){
     }

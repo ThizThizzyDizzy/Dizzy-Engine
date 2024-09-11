@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.ui.component.layer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
+import org.joml.Vector2f;
 public class TextLabelLayer extends ComponentLabel{
     public String text;
     public Color color;
@@ -13,7 +14,8 @@ public class TextLabelLayer extends ComponentLabel{
     public void setLabel(Object label){
         if(label==null)text = null;
         else if(label instanceof String str)this.text = str;
-        else throw new IllegalArgumentException("Invalid label object! Expected String, found "+label.getClass().getName());
+        else
+            throw new IllegalArgumentException("Invalid label object! Expected String, found "+label.getClass().getName());
     }
     @Override
     public void draw(Component c, double deltaTime){
@@ -24,5 +26,13 @@ public class TextLabelLayer extends ComponentLabel{
         float scale = Math.min(1, (c.getWidth()-labelInset*2)/length);
         float textHeight = (c.getHeight()-labelInset*2)*scale;
         Renderer.drawCenteredText(c.x, c.y+c.getHeight()/2-textHeight/2, c.x+c.getWidth(), c.y+c.getHeight()/2+textHeight/2, text);
+    }
+    @Override
+    public Vector2f getPreferredSize(){
+        var preferredSize = new Vector2f();
+        if(text==null)return preferredSize;
+        float height = Renderer.getPreferredTextHeight();
+        float length = Renderer.getStringWidth(text, height);
+        return preferredSize.set(length+labelInset*2, height+labelInset*2);
     }
 }

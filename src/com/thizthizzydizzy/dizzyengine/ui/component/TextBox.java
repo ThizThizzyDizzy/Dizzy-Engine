@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.ui.component;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import java.util.ArrayList;
+import org.joml.Vector2f;
 import static org.lwjgl.glfw.GLFW.*;
 public class TextBox extends Component{
     public ComponentLayer background = getUIContext().getDefaultComponentBackground(TextBox.class);
@@ -11,6 +12,7 @@ public class TextBox extends Component{
     public boolean editable = true;
     public boolean runActionsOnTextChange = false;
     public TextBox(){
+        this("");
     }
     public TextBox(String text){
         this.text = text;
@@ -44,6 +46,10 @@ public class TextBox extends Component{
     public TextBox addPriorityAction(Runnable action){
         actions.add(0, action);
         return this;
+    }
+    @Override
+    public Vector2f getPreferredSize(){
+        return label.getPreferredSize();
     }
     public String getText(){
         return text;

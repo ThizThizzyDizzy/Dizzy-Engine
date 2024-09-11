@@ -3,6 +3,7 @@ import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import java.util.ArrayList;
 import org.joml.Vector2d;
+import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 public class Button extends Component{
     public static boolean ACT_ON_PRESS = false;//TODO should this be moved to the ui context?
@@ -22,7 +23,7 @@ public class Button extends Component{
     }
     @Override
     public void draw(double deltaTime){
-        if(background!=null)background.draw(this, deltaTime);
+//        if(background!=null)background.draw(this, deltaTime);
         if(label!=null)label.draw(this, deltaTime);
     }
     @Override
@@ -50,5 +51,9 @@ public class Button extends Component{
     public Button addPriorityAction(Runnable action){
         actions.add(0, action);
         return this;
+    }
+    @Override
+    public Vector2f getPreferredSize(){
+        return label.getPreferredSize();
     }
 }
