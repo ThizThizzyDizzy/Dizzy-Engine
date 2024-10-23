@@ -11,9 +11,9 @@ public class Image{
         data = new int[width][height];
     }
     public void setRGB(int x, int y, int width, int height, int[] rgbArray, int offset, int scansize){
-        int yoff  = offset;
+        int yoff = offset;
         int off;
-        for(int Y = y; Y<y+height; Y++, yoff+=scansize){
+        for(int Y = y; Y<y+height; Y++, yoff += scansize){
             off = yoff;
             for(int X = x; X<x+width; X++){
                 data[X][Y] = rgbArray[off++];
@@ -26,7 +26,7 @@ public class Image{
         if(rgbArray==null){
             rgbArray = new int[offset+h*scansize];
         }
-        for(int y = startY; y<startY+h; y++, yoff+=scansize){
+        for(int y = startY; y<startY+h; y++, yoff += scansize){
             off = yoff;
             for(int x = startX; x<startX+w; x++){
                 rgbArray[off++] = getRGB(x, y);

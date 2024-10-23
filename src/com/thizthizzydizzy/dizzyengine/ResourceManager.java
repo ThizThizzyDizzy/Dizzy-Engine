@@ -57,7 +57,8 @@ public class ResourceManager{
         }catch(IOException ex){
             Logger.error(ex);
         }
-        if(imageData==null)throw new RuntimeException("Failed to load image: "+stbi_failure_reason());
+        if(imageData==null)
+            throw new RuntimeException("Failed to load image: "+stbi_failure_reason());
         //finish read image
         int texture = loadGLTexture(width.get(0), height.get(0), imageData);
         stbi_image_free(imageData);
@@ -68,12 +69,12 @@ public class ResourceManager{
     public static int loadGLTexture(int width, int height, ByteBuffer imageData){
         int texture = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, texture);
-        
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        
+
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
         glGenerateMipmap(GL_TEXTURE_2D);
         return texture;
@@ -87,6 +88,9 @@ public class ResourceManager{
         return imgs.get(image);
     }
     public static void deleteTexture(Image image){
-        imgs.remove(image);
+        deleteTexture(imgs.remove(image));
+    }
+    public static void deleteTexture(int texture){
+        glDeleteTextures(texture);
     }
 }
