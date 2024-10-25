@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.lwjgl.openal.AL10;
 import static org.lwjgl.openal.AL10.*;
 public class SoundSource{
     private final int id;
@@ -54,18 +53,26 @@ public class SoundSource{
      * Stop playing the current sound and clear all queued sounds.
      */
     public void stopPlaying(){
-        if(getState()!=AL_STOPPED)alSourceStop(id);
         soundQueue.clear();
-        currentSound = null;
+        skip();
     }
     /**
      * Stop playing the current sound. This does not clear queued sounds.
      */
-    public void skip(){
-        alSourceStop(id);
+    public synchronized void skip(){
+        var stream = currentSound;
         currentSound = null;
+        if(getState()!=AL_STOPPED){
+            int processed = alGetSourcei(id, AL_BUFFERS_QUEUED);
+            alSourceStop(id);
+            for(int i = 0; i<processed; i++){
+                SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
+            }
+        }
+        soundQueue.clear();
+        if(stream!=null)stream.close();
     }
-    
+
     public int getState(){
         return alGetSourcei(id, AL_SOURCE_STATE);
     }
@@ -73,30 +80,27 @@ public class SoundSource{
         Logger.info("Started Playing Sound");
         try{
             currentSound = sound.stream();
-            AL10.alSourceQueueBuffers(id, currentSound.next().getID());
-            AL10.alSourcePlay(id);
+            alSourceQueueBuffers(id, currentSound.next().getID());
+            alSourcePlay(id);
         }catch(IOException|UnsupportedAudioFileException ex){
             Logger.error(ex);
         }
     }
 
     public void cleanup(){
-        if(getState()==AL_PLAYING)alSourceStop(id);
-        if(currentSound!=null)currentSound.close();
+        stopPlaying();
         alDeleteSources(id);
     }
-    public void update(){
+    public synchronized void update(){
         if(currentSound!=null){
             int processed = alGetSourcei(id, AL_BUFFERS_PROCESSED);
             for(int i = 0; i<processed; i++){
-                Logger.info("Released buffer");
                 SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
             }
             if(currentSound.hasNext()){
                 int queued = alGetSourcei(id, AL_BUFFERS_QUEUED);
                 if(queued<SoundSystem.BUFFER_QUEUE_SIZE){
                     var buf = currentSound.next().getID();
-                    Logger.info("Queued buffer "+buf+" ("+queued+")");
                     alSourceQueueBuffers(id, buf);
                 }
             }else if(getState()==AL_STOPPED){
@@ -109,9 +113,9 @@ public class SoundSource{
         }
     }
     public void play(){
-        AL10.alSourcePlay(id);
+        alSourcePlay(id);
     }
     public void pause(){
-        AL10.alSourcePause(id);
+        alSourcePause(id);
     }
 }

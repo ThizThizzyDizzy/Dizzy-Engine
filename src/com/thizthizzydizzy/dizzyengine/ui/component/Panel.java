@@ -26,7 +26,10 @@ public class Panel extends Component{
     @Override
     public <T extends Component> T add(T component){
         var ret = super.add(component);
-        layout.arrangeComponents(this);
+        if(layout!=null)layout.arrangeComponents(this);
         return ret;
+    }
+    public void rearrange(){
+        if(layout!=null)layout.arrangeComponents(this);
     }
 }

@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.ui;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
+import com.thizthizzydizzy.dizzyengine.ui.component.layer.ColorBackgroundLayer;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
@@ -17,6 +18,9 @@ public abstract class UILayer extends DizzyLayer{
     private HashMap<Class<? extends Component>, Supplier<ComponentHandle>> defaultComponentHandles = new HashMap<>();
     {
         defaultComponentLabels.put(null, () -> new TextLabelLayer("", Color.BLACK));
+    }
+    {
+        defaultComponentBackgrounds.put(null, () -> new ColorBackgroundLayer(Color.WHITE));
     }
     public <T extends Menu> T open(T menu){
         if(this.menu!=null)this.menu.onMenuClosed();
