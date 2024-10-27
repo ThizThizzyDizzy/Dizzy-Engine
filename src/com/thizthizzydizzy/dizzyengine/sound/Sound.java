@@ -19,7 +19,7 @@ public class Sound{
     private Supplier<InputStream> soundSupplier;
     private ArrayList<SoundBuffer> buffers;
     public Sound(String path){
-        this(()->ResourceManager.getInternalResource(path));
+        this(() -> ResourceManager.getInternalResource(path));
     }
     public Sound(Supplier<InputStream> soundSupplier){
         this.soundSupplier = soundSupplier;
@@ -50,19 +50,29 @@ public class Sound{
             new Thread(() -> {
                 try(AudioInputStream stream = AudioSystem.getAudioInputStream(soundSupplier.get())){
                     var format = stream.getFormat();
-                    if(format.isBigEndian())throw new UnsupportedAudioFileException("Big Endian formats are not supported yet!");
+                    if(format.isBigEndian())
+                        throw new UnsupportedAudioFileException("Big Endian formats are not supported yet!");
                     int alFormat = switch(format.getChannels()){
-                        case 1 -> switch(format.getSampleSizeInBits()){
-                            case 8 -> AL10.AL_FORMAT_MONO8;
-                            case 16 -> AL10.AL_FORMAT_MONO16;
-                            default -> -1;
-                        };
-                        case 2 -> switch(format.getSampleSizeInBits()){
-                            case 8 -> AL10.AL_FORMAT_STEREO8;
-                            case 16 -> AL10.AL_FORMAT_STEREO16;
-                            default -> -1;
-                        };
-                        default -> -1;
+                        case 1 ->
+                            switch(format.getSampleSizeInBits()){
+                                case 8 ->
+                                    AL10.AL_FORMAT_MONO8;
+                                case 16 ->
+                                    AL10.AL_FORMAT_MONO16;
+                                default ->
+                                    -1;
+                            };
+                        case 2 ->
+                            switch(format.getSampleSizeInBits()){
+                                case 8 ->
+                                    AL10.AL_FORMAT_STEREO8;
+                                case 16 ->
+                                    AL10.AL_FORMAT_STEREO16;
+                                default ->
+                                    -1;
+                            };
+                        default ->
+                            -1;
                     };
                     byte[] bytes = stream.readAllBytes();//TODO cut it up by SoundSystem.FRAMES_PER_BUFFER frames
                     ByteBuffer data = BufferUtils.createByteBuffer(bytes.length).put(bytes);
@@ -84,19 +94,29 @@ public class Sound{
             {
                 in = AudioSystem.getAudioInputStream(soundSupplier.get());
                 format = in.getFormat();
-                if(format.isBigEndian())throw new UnsupportedAudioFileException("Big Endian audio files are not supported!");
+                if(format.isBigEndian())
+                    throw new UnsupportedAudioFileException("Big Endian audio files are not supported!");
                 alFormat = switch(format.getChannels()){
-                    case 1 -> switch(format.getSampleSizeInBits()){
-                        case 8 -> AL10.AL_FORMAT_MONO8;
-                        case 16 -> AL10.AL_FORMAT_MONO16;
-                        default -> -1;
-                    };
-                    case 2 -> switch(format.getSampleSizeInBits()){
-                        case 8 -> AL10.AL_FORMAT_STEREO8;
-                        case 16 -> AL10.AL_FORMAT_STEREO16;
-                        default -> -1;
-                    };
-                    default -> -1;
+                    case 1 ->
+                        switch(format.getSampleSizeInBits()){
+                            case 8 ->
+                                AL10.AL_FORMAT_MONO8;
+                            case 16 ->
+                                AL10.AL_FORMAT_MONO16;
+                            default ->
+                                -1;
+                        };
+                    case 2 ->
+                        switch(format.getSampleSizeInBits()){
+                            case 8 ->
+                                AL10.AL_FORMAT_STEREO8;
+                            case 16 ->
+                                AL10.AL_FORMAT_STEREO16;
+                            default ->
+                                -1;
+                        };
+                    default ->
+                        -1;
                 };
             }
             @Override
@@ -130,6 +150,10 @@ public class Sound{
                 }catch(IOException ex){
                     Logger.error(ex);
                 }
+            }
+            @Override
+            public float getFrameRate(){
+                return format.getFrameRate();
             }
         };
     }

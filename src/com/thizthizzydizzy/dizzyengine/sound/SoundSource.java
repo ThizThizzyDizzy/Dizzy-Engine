@@ -10,6 +10,7 @@ public class SoundSource{
     private final int id;
     public ArrayList<Sound> soundQueue = new ArrayList<>();
     public SoundStream currentSound = null;
+    private int consumedBuffers;
     public SoundSource(){
         SoundSystem.addSource(this);
         id = alGenSources();
@@ -62,6 +63,7 @@ public class SoundSource{
     public synchronized void skip(){
         var stream = currentSound;
         currentSound = null;
+        consumedBuffers = 0;
         if(getState()!=AL_STOPPED){
             int processed = alGetSourcei(id, AL_BUFFERS_QUEUED);
             alSourceStop(id);
@@ -80,6 +82,7 @@ public class SoundSource{
         Logger.info("Started Playing Sound");
         try{
             currentSound = sound.stream();
+            consumedBuffers = 0;
             alSourceQueueBuffers(id, currentSound.next().getID());
             alSourcePlay(id);
         }catch(IOException|UnsupportedAudioFileException ex){
@@ -97,6 +100,7 @@ public class SoundSource{
             for(int i = 0; i<processed; i++){
                 SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
             }
+            consumedBuffers+=processed;
             if(currentSound.hasNext()){
                 int queued = alGetSourcei(id, AL_BUFFERS_QUEUED);
                 if(queued<SoundSystem.BUFFER_QUEUE_SIZE){
@@ -117,5 +121,8 @@ public class SoundSource{
     }
     public void pause(){
         alSourcePause(id);
+    }
+    public float getPlayhead(){
+        return currentSound==null?-1:consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/currentSound.getFrameRate();
     }
 }

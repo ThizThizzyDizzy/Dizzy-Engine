@@ -4,4 +4,5 @@ public interface SoundStream{
     public boolean hasNext();
     public SoundBuffer next();
     public void close();
+    public float getFrameRate();
 }
