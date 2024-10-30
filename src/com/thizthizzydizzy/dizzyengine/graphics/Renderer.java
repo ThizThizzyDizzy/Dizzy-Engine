@@ -2,6 +2,8 @@ package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Stack;
 import org.joml.Matrix4f;
@@ -86,6 +88,76 @@ public class Renderer{
             }
         };
     }
+    private static Element createRegularPolygonElement(int sides){
+        return new Element(){
+            public int vao, vbo, ebo;
+            @Override
+            public void init(){
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ebo = glGenBuffers();
+
+                ArrayList<Float> verticiesList = new ArrayList<>();
+                verticiesList.addAll(Arrays.asList(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f));//center point
+                float angle = 0;
+                for(int i = 0; i<sides; i++){
+                    float x = (float)Math.cos(Math.toRadians(angle-90));
+                    float y = (float)Math.sin(Math.toRadians(angle-90));
+                    verticiesList.addAll(Arrays.asList(x, y, 0f, 0f, 0f, 1f, 0f, 0f));
+                    angle += (360f/sides);
+                }
+
+                float[] verticies = new float[verticiesList.size()];
+                for(int i = 0; i<verticiesList.size(); i++)
+                    verticies[i] = verticiesList.get(i);
+
+                ArrayList<Integer> indiciesList = new ArrayList<>();
+                for(int i = 0; i<sides; i++){
+                    indiciesList.add(0);
+                    indiciesList.add(i+1);
+                    indiciesList.add(i+2);
+                }
+                int[] indicies = new int[indiciesList.size()];
+                for(int i = 0; i<indiciesList.size(); i++){
+                    indicies[i] = indiciesList.get(i);
+                }
+
+                glBindVertexArray(vao);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+                //pos
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+                //norm
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+                //tex
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+                glBindVertexArray(0);
+            }
+            @Override
+            public void draw(){
+                glBindVertexArray(vao);
+                glDrawElements(GL_TRIANGLES, sides*3, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
+            }
+            @Override
+            public void cleanup(){
+                glDeleteBuffers(ebo);
+                glDeleteBuffers(vbo);
+                glDeleteVertexArrays(vao);
+            }
+        };
+    }
     public static void initElements(){
         for(Element e : elements.values())e.init();
     }
@@ -126,6 +198,19 @@ public class Renderer{
         }
         bindTexture(texture);
         drawElement(createRectangleElement(texLeft, texTop, texRight, texBottom), left, top, right-left, bottom-top);
+    }
+    public static void fillRegularPolygon(float x, float y, int sides, float radius){
+        if(sides<3)
+            throw new IllegalArgumentException("A polygot must have at least 3 sides!");
+        bindTexture(0);
+        String key = "DizzyEngine:RegularPolygon_"+sides;
+        var element = elements.get(key);
+        if(element==null){
+            element = createRegularPolygonElement(sides);
+            elements.put(key, element);
+            element.init();
+        }
+        drawElement(element, x, y, radius, radius);
     }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
@@ -224,7 +309,8 @@ public class Renderer{
             shader.setUniform4f("noTex", 0f, 0f, 0f, 0f);
     }
     public static void bound(float left, float top, float right, float bottom){
-        if(boundStack.size()>=1024)throw new StackOverflowError("Exceeded render  bound stack limit! ("+boundStack.size()+")");
+        if(boundStack.size()>=1024)
+            throw new StackOverflowError("Exceeded render  bound stack limit! ("+boundStack.size()+")");
         boundStack.push(new Bound(modelMatStack.get(new Matrix4f())){
             @Override
             void draw(){
@@ -282,7 +368,8 @@ public class Renderer{
         resetModelMatrix();
     }
     public static void clearBounds(){
-        if(!boundStack.isEmpty())Logger.warn("Found "+boundStack.size()+" bounds after frame render! Clearing stencil...");
+        if(!boundStack.isEmpty())
+            Logger.warn("Found "+boundStack.size()+" bounds after frame render! Clearing stencil...");
         boundStack.clear();
         redrawStencil();
     }
@@ -296,16 +383,17 @@ public class Renderer{
         }
         abstract void draw();
     }
-    public static void drawElement(String name, float x, float y, float width, float height){
-        drawElement(name, x, y, 1, width, height, 1);
+    public static void drawElement(String name, float x, float y, float scaleX, float scaleY){
+        drawElement(name, x, y, 1, scaleX, scaleY, 1);
     }
-    public static void drawElement(String name, float x, float y, float z, float width, float height, float depth){
-        model(new Matrix4f().setTranslation(x, y, z).scale(width, height, depth));
+    public static void drawElement(String name, float x, float y, float z, float scaleX, float scaleY, float scaleZ){
+        model(new Matrix4f().setTranslation(x, y, z).scale(scaleX, scaleY, scaleZ));
         drawElement(name);
         resetModelMatrix();
     }
     private static void drawElement(String name){
-        if(!elements.containsKey(name))throw new IllegalArgumentException("Cannot draw element: "+name+" does not exist!");
+        if(!elements.containsKey(name))
+            throw new IllegalArgumentException("Cannot draw element: "+name+" does not exist!");
         elements.get(name).draw();
     }
     public static void drawElement(Element element, float x, float y, float width, float height){

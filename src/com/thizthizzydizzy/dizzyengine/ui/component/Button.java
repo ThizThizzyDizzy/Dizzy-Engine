@@ -23,7 +23,7 @@ public class Button extends Component{
     }
     @Override
     public void draw(double deltaTime){
-//        if(background!=null)background.draw(this, deltaTime);
+        if(background!=null)background.draw(this, deltaTime);
         if(label!=null)label.draw(this, deltaTime);
     }
     @Override
