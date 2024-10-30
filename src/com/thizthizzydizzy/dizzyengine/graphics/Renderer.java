@@ -158,6 +158,79 @@ public class Renderer{
             }
         };
     }
+    private static Element createHollowRegularPolygonElement(int sides, float sizeRatio){
+        return new Element(){
+            public int vao, vbo, ebo;
+            @Override
+            public void init(){
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ebo = glGenBuffers();
+
+                ArrayList<Float> verticiesList = new ArrayList<>();
+                float angle = 0;
+                for(int i = 0; i<sides; i++){
+                    float x = (float)Math.cos(Math.toRadians(angle-90));
+                    float y = (float)Math.sin(Math.toRadians(angle-90));
+                    verticiesList.addAll(Arrays.asList(x, y, 0f, 0f, 0f, 1f, 0f, 0f));
+                    verticiesList.addAll(Arrays.asList(x*sizeRatio, y*sizeRatio, 0f, 0f, 0f, 1f, 0f, 0f));
+                    angle += (360f/sides);
+                }
+
+                float[] verticies = new float[verticiesList.size()];
+                for(int i = 0; i<verticiesList.size(); i++)
+                    verticies[i] = verticiesList.get(i);
+
+                ArrayList<Integer> indiciesList = new ArrayList<>();
+                for(int i = 0; i<sides; i++){
+                    indiciesList.add(0);
+                    indiciesList.add(i+1);
+                    indiciesList.add(i+2);
+                    indiciesList.add(0);
+                    indiciesList.add(i+2);
+                    indiciesList.add(i+3);
+                }
+                int[] indicies = new int[indiciesList.size()];
+                for(int i = 0; i<indiciesList.size(); i++){
+                    indicies[i] = indiciesList.get(i);
+                }
+
+                glBindVertexArray(vao);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+                //pos
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+                //norm
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+                //tex
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+                glBindVertexArray(0);
+            }
+            @Override
+            public void draw(){
+                glBindVertexArray(vao);
+                glDrawElements(GL_TRIANGLES, sides*6, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
+            }
+            @Override
+            public void cleanup(){
+                glDeleteBuffers(ebo);
+                glDeleteBuffers(vbo);
+                glDeleteVertexArrays(vao);
+            }
+        };
+    }
     public static void initElements(){
         for(Element e : elements.values())e.init();
     }
@@ -201,7 +274,7 @@ public class Renderer{
     }
     public static void fillRegularPolygon(float x, float y, int sides, float radius){
         if(sides<3)
-            throw new IllegalArgumentException("A polygot must have at least 3 sides!");
+            throw new IllegalArgumentException("A polygon must have at least 3 sides!");
         bindTexture(0);
         String key = "DizzyEngine:RegularPolygon_"+sides;
         var element = elements.get(key);
@@ -211,6 +284,20 @@ public class Renderer{
             element.init();
         }
         drawElement(element, x, y, radius, radius);
+    }
+    public static void fillHollowRegularPolygon(float x, float y, int sides, float innerRadius, float outerRadius){
+        if(sides<3)
+            throw new IllegalArgumentException("A polygon must have at least 3 sides!");
+        float sizeRatio = innerRadius/outerRadius;
+        bindTexture(0);
+        String key = "DizzyEngine:HollowRegularPolygon_"+sides+"_"+sizeRatio;
+        var element = elements.get(key);
+        if(element==null){
+            element = createHollowRegularPolygonElement(sides, sizeRatio);
+            elements.put(key, element);
+            element.init();
+        }
+        drawElement(element, x, y, outerRadius, outerRadius);
     }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
