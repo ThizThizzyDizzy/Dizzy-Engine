@@ -273,6 +273,9 @@ public class Renderer{
         drawElement(createRectangleElement(texLeft, texTop, texRight, texBottom), left, top, right-left, bottom-top);
     }
     public static void fillRegularPolygon(float x, float y, int sides, float radius){
+        fillRegularPolygon(x, y, sides, radius, radius);
+    }
+    public static void fillRegularPolygon(float x, float y, int sides, float radiusX, float radiusY){
         if(sides<3)
             throw new IllegalArgumentException("A polygon must have at least 3 sides!");
         bindTexture(0);
@@ -283,7 +286,7 @@ public class Renderer{
             elements.put(key, element);
             element.init();
         }
-        drawElement(element, x, y, radius, radius);
+        drawElement(element, x, y, radiusX, radiusY);
     }
     public static void fillHollowRegularPolygon(float x, float y, int sides, float innerRadius, float outerRadius){
         if(sides<3)

@@ -6,7 +6,11 @@ public class Framebuffer{
     public final int id;
     public final int renderBuffer;
     public final int texture;
+    public final int width;
+    public final int height;
     public Framebuffer(int width, int height){
+        this.width = width;
+        this.height = height;
         id = glGenFramebuffers();
         glBindFramebuffer(GL_FRAMEBUFFER, id);
         texture = glGenTextures();
