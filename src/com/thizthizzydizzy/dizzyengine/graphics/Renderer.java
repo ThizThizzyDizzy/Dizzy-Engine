@@ -356,7 +356,7 @@ public class Renderer{
     }
     public static void setShader(Shader shader){
         Renderer.shader = shader;
-        glUseProgram(shader.shaderID);
+        shader.use();
     }
     private static Matrix4f createModelMatrix(float x, float y, float scaleX, float scaleY){
         return new Matrix4f().setTranslation(x, y, 0).scaleXY(scaleX, scaleY);
@@ -378,16 +378,16 @@ public class Renderer{
         model(matrix);
     }
     private static void setExactModelMatrix(Matrix4f matrix){
-        glUniformMatrix4fv(glGetUniformLocation(shader.shaderID, "model"), false, matrix.get(new float[16]));
+        shader.setUniformMatrix4fv("model", matrix);
     }
     public static void resetModelMatrix(){
         model(new Matrix4f());
     }
     public static void view(Matrix4f matrix){
-        glUniformMatrix4fv(glGetUniformLocation(shader.shaderID, "view"), false, matrix.get(new float[16]));
+        shader.setUniformMatrix4fv("view", matrix);
     }
     public static void projection(Matrix4f matrix){
-        glUniformMatrix4fv(glGetUniformLocation(shader.shaderID, "projection"), false, matrix.get(new float[16]));
+        shader.setUniformMatrix4fv("projection", matrix);
     }
     public static void unbindTexture(){
         bindTexture(0);

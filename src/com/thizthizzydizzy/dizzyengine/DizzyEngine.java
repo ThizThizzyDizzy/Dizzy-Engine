@@ -106,7 +106,7 @@ public class DizzyEngine{
         glEnable(GL_CULL_FACE);
         Logger.info("Initializing Elements");
         Renderer.initElements();//TODO I don't like this
-        Renderer.setDefaultShader(new Shader("vert.shader", "frag.shader"));
+        Renderer.setDefaultShader(Shader.loadInternal("vert.shader", "frag.shader"));
         Logger.info("Initializing Layers");
         synchronized(layers){
             for(var layer : layers)wrapEvent(layer, layer::init);
