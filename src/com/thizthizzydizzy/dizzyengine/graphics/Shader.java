@@ -63,14 +63,20 @@ public class Shader{
             throw new RuntimeException(ex);
         }
     }
+    public void setUniform1f(String varName, float x){
+        glUniform1f(glGetUniformLocation(program, varName), x);
+    }
+    public void setUniform2f(String varName, float x, float y){
+        glUniform2f(glGetUniformLocation(program, varName), x, y);
+    }
+    public void setUniform3f(String varName, float x, float y, float z){
+        glUniform3f(glGetUniformLocation(program, varName), x, y, z);
+    }
     public void setUniform4f(String varName, float x, float y, float z, float w){
         glUniform4f(glGetUniformLocation(program, varName), x, y, z, w);
     }
     public void setUniform1i(String varName, int x){
         glUniform1i(glGetUniformLocation(program, varName), x);
-    }
-    public void setUniform1f(String varName, float x){
-        glUniform1f(glGetUniformLocation(program, varName), x);
     }
     public void setUniformMatrix4fv(String model, Matrix4f matrix){
         glUniformMatrix4fv(glGetUniformLocation(program, model), false, matrix.get(new float[16]));
