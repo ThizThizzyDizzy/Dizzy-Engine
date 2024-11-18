@@ -354,6 +354,9 @@ public class Renderer{
     public static void setDefaultShader(Shader shader){
         defaultShader = shader;
     }
+    public static void resetShader(){
+        setShader(defaultShader);
+    }
     public static void setShader(Shader shader){
         Renderer.shader = shader;
         shader.use();
@@ -498,7 +501,7 @@ public class Renderer{
         element.draw();
     }
     public static void reset(){
-        setShader(defaultShader);
+        resetShader();
         clearTranslationsAndBounds();
         unbindTexture();
         setColor(1f, 1f, 1f, 1f);

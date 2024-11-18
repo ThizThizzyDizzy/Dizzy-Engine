@@ -196,4 +196,10 @@ public class MathUtil{
     public static double lerp(double a, double b, double t){
         return a+(b-a)*t;
     }
+    public static float inverseLerp(float a, float b, float v){
+        return (v-a)/(b-a);
+    }
+    public static double inverseLerp(double a, double b, double v){
+        return (v-a)/(b-a);
+    }
 }
