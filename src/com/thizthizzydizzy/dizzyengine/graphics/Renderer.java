@@ -31,6 +31,101 @@ public class Renderer{
     }
     static{
         elements.put("rect", createRectangleElement(0, 0, 1, 1));
+        elements.put("cube", new Element(){
+            public int vao, vbo, ebo;
+            @Override
+            public void init(){
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ebo = glGenBuffers();
+                float[] verticies = new float[]{
+                    //+z
+                    0, 0, 1, 0, 0, 1, 0, 1,
+                    0, 1, 1, 0, 0, 1, 0, 0,
+                    1, 0, 1, 0, 0, 1, 1, 1,
+                    1, 1, 1, 0, 0, 1, 1, 0,
+                    //-z
+                    0, 0, 0, 0, 0, -1, 0, 1,
+                    1, 0, 0, 0, 0, -1, 1, 1,
+                    0, 1, 0, 0, 0, -1, 0, 0,
+                    1, 1, 0, 0, 0, -1, 1, 0,
+                    //+y
+                    0, 1, 0, 0, 1, 0, 0, 0,
+                    1, 1, 0, 0, 1, 0, 1, 0,
+                    0, 1, 1, 0, 1, 0, 0, 1,
+                    1, 1, 1, 0, 1, 0, 1, 1,
+                    //-y
+                    0, 0, 0, 0, -1, 0, 0, 1,
+                    0, 0, 1, 0, -1, 0, 0, 0,
+                    1, 0, 0, 0, -1, 0, 1, 1,
+                    1, 0, 1, 0, -1, 0, 1, 0,
+                    //+x
+                    1, 0, 0, 1, 0, 0, 0, 1,
+                    1, 0, 1, 1, 0, 0, 1, 1,
+                    1, 1, 0, 1, 0, 0, 0, 0,
+                    1, 1, 1, 1, 0, 0, 1, 0,
+                    //-x
+                    0, 0, 0, -1, 0, 0, 0, 1,
+                    0, 1, 0, -1, 0, 0, 0, 0,
+                    0, 0, 1, -1, 0, 0, 1, 1,
+                    0, 1, 1, -1, 0, 0, 1, 0
+                };
+                int[] indicies = new int[]{
+                    //+z
+                    1, 0, 2,
+                    3, 1, 2,
+                    //-z
+                    5, 4, 6,
+                    7, 5, 6,
+                    //+y
+                    9, 8, 10,
+                    11, 9, 10,
+                    //-y
+                    13, 12, 14,
+                    15, 13, 14,
+                    //+x
+                    17, 16, 18,
+                    19, 17, 18,
+                    //-x
+                    21, 20, 22,
+                    23, 21, 22
+                };
+
+                glBindVertexArray(vao);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+                //pos
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+                //norm
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+                //tex
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+                glBindVertexArray(0);
+            }
+            @Override
+            public void draw(){
+                glBindVertexArray(vao);
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
+            }
+            @Override
+            public void cleanup(){
+                glDeleteBuffers(ebo);
+                glDeleteBuffers(vbo);
+                glDeleteVertexArrays(vao);
+            }
+        });
     }
     private static Element createRectangleElement(float left, float top, float right, float bottom){
         return new Element(){
@@ -484,7 +579,7 @@ public class Renderer{
         drawElement(name);
         resetModelMatrix();
     }
-    private static void drawElement(String name){
+    public static void drawElement(String name){
         if(!elements.containsKey(name))
             throw new IllegalArgumentException("Cannot draw element: "+name+" does not exist!");
         elements.get(name).draw();
@@ -497,7 +592,7 @@ public class Renderer{
         drawElement(element);
         resetModelMatrix();
     }
-    private static void drawElement(Element element){
+    public static void drawElement(Element element){
         element.draw();
     }
     public static void reset(){

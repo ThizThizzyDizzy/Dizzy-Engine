@@ -190,6 +190,12 @@ public class MathUtil{
         if(isPrime(n+step))return n+step;
         return nextPrime(n+step, step);
     }
+    public static float clamp(float val, float min, float max){
+        return Math.max(min, Math.min(val, max));
+    }
+    public static double clamp(double val, double min, double max){
+        return Math.max(min, Math.min(val, max));
+    }
     public static float lerp(float a, float b, float t){
         return a+(b-a)*t;
     }

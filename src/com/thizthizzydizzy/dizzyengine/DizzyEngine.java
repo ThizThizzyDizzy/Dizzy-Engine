@@ -9,6 +9,7 @@ import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
@@ -109,35 +110,35 @@ public class DizzyEngine{
         Renderer.setDefaultShader(Shader.loadInternal("vert.shader", "frag.shader"));
         Logger.info("Initializing Layers");
         synchronized(layers){
-            for(var layer : layers)wrapEvent(layer, layer::init);
+            wrapEvent(layers, DizzyLayer::init);
         }
         Logger.info("Initializing Input");
         glfwSetCharCallback(window, (window, codepoint) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onChar(0, codepoint));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onChar(0, codepoint));
         });
         glfwSetCharModsCallback(window, (window, codepoint, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCharMods(0, codepoint, mods));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCharMods(0, codepoint, mods));
         });
         glfwSetCursorEnterCallback(window, (window, entered) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCursorEnter(0, entered));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCursorEnter(0, entered));
         });
         glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onCursorPos(0, xpos, ypos));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCursorPos(0, xpos, ypos));
         });
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onKey(0, key, scancode, action, mods));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onKey(0, key, scancode, action, mods));
         });
         glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onMouseButton(0, button, action, mods));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onMouseButton(0, button, action, mods));
         });
         glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onScroll(0, xoffset, yoffset));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onScroll(0, xoffset, yoffset));
         });
         glfwSetDropCallback(window, (window, count, names) -> {
-            if(window==DizzyEngine.window)for(var layer : layers)wrapEvent(layer, ()->layer.onDrop(0, count, names));
+            if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onDrop(0, count, names));
         });
         glfwSetJoystickCallback((jid, event) -> {
-            for(var layer : layers)wrapEvent(layer, ()->layer.onJoystick(0, jid, event));
+            wrapEvent(layers, (layer) -> layer.onJoystick(0, jid, event));
         });
         Logger.pop();
     }
@@ -175,6 +176,12 @@ public class DizzyEngine{
             if(currentUIContext==layer)currentUIContext = null;
         }
     }
+    private static void wrapEvent(List<DizzyLayer> layers, Consumer<DizzyLayer> event){
+        for(int i = 0; i<layers.size(); i++){
+            var layer = layers.get(i);
+            wrapEvent(layer, () -> event.accept(layer));
+        }
+    }
     private static void wrapEvent(DizzyLayer layer, Runnable event){
         Logger.push(layer);
         if(layer instanceof UILayer ui)currentUIContext = ui;
@@ -202,7 +209,7 @@ public class DizzyEngine{
                 }
                 screenBuffer = new Framebuffer(screenSize.x, screenSize.y);
                 synchronized(layers){
-                    for(var layer : layers)wrapEvent(layer, ()->layer.onScreenSize(screenSize));
+                    wrapEvent(layers, (layer) -> layer.onScreenSize(screenSize));
                 }
                 windowProjectionMatrix.setOrtho(0, screenSize.x, screenSize.y, 0, 0.1f, 10f);
             }
@@ -221,11 +228,11 @@ public class DizzyEngine{
             glClearColor(0f, 0f, 0f, 1f);
             glClear(GL_COLOR_BUFFER_BIT);
             synchronized(layers){
-                for(var layer : layers){
+                wrapEvent(layers, (layer)->{
                     screenBuffer.bind();//just in case it was changed
                     Renderer.reset();
-                    wrapEvent(layer, ()->layer.render(deltaTime));
-                }
+                    layer.render(deltaTime);
+                });
                 Renderer.reset();
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 glDisable(GL_CULL_FACE);

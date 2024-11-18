@@ -6,9 +6,9 @@ import java.io.InputStreamReader;
 import org.joml.Matrix4f;
 import static org.lwjgl.opengl.GL20.*;
 public class Shader{
-    private static int vertexShader;
-    private static int fragmentShader;
-    private static int program;
+    private int vertexShader;
+    private int fragmentShader;
+    private int program;
     public static Shader loadInternal(String vertexShaderPath, String fragmentShaderPath){
         return new Shader(loadFile("/shaders/"+vertexShaderPath), loadFile("/shaders/"+fragmentShaderPath));
     }
@@ -44,7 +44,7 @@ public class Shader{
         }
         return program;
     }
-    private static void createShaderProgram(String vertex, String fragment){
+    private void createShaderProgram(String vertex, String fragment){
         vertexShader = compileShader(GL_VERTEX_SHADER, vertex);
         fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragment);
         program = createShaderProgram(vertexShader, fragmentShader);
