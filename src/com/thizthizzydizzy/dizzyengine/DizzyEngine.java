@@ -207,7 +207,7 @@ public class DizzyEngine{
                 if(screenBuffer!=null){
                     screenBuffer.destroy();
                 }
-                screenBuffer = new Framebuffer(screenSize.x, screenSize.y);
+                screenBuffer = new Framebuffer(Math.max(1, screenSize.x), Math.max(1, screenSize.y));
                 synchronized(layers){
                     wrapEvent(layers, (layer) -> layer.onScreenSize(screenSize));
                 }
