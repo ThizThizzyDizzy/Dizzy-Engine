@@ -10,6 +10,7 @@ public class NoclipProcessor extends DizzyLayer{
     private static NoclipProcessor layer;
     public static float speedMultiplier = 1f;
     public static float rotationSpeedMultiplier = 1f;
+    public static boolean enableInput = true;
     public static void initialize(){
         if(layer==null)DizzyEngine.addLayer(layer = new NoclipProcessor());
     }
@@ -36,6 +37,7 @@ public class NoclipProcessor extends DizzyLayer{
     }
     @Override
     public void render(double deltaTime){
+        if(!enableInput)return;
         Vector3f direction = new Vector3f(0, 0, 0);
         float multiplierMultiplier = 1;
         boolean control = DizzyEngine.isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL)||DizzyEngine.isKeyDown(GLFW.GLFW_KEY_RIGHT_CONTROL);

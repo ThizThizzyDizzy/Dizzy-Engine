@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import org.joml.Matrix4f;
+import org.joml.Vector2fc;
+import org.joml.Vector3fc;
+import org.joml.Vector4fc;
 import static org.lwjgl.opengl.GL20.*;
 public class Shader{
     private int vertexShader;
@@ -66,11 +69,20 @@ public class Shader{
     public void setUniform1f(String varName, float x){
         glUniform1f(glGetUniformLocation(program, varName), x);
     }
+    public void setUniform2f(String varName, Vector2fc vec){
+        setUniform2f(varName, vec.x(), vec.y());
+    }
     public void setUniform2f(String varName, float x, float y){
         glUniform2f(glGetUniformLocation(program, varName), x, y);
     }
+    public void setUniform3f(String varName, Vector3fc vec){
+        setUniform3f(varName, vec.x(), vec.y(), vec.z());
+    }
     public void setUniform3f(String varName, float x, float y, float z){
         glUniform3f(glGetUniformLocation(program, varName), x, y, z);
+    }
+    public void setUniform4f(String varName, Vector4fc vec){
+        setUniform4f(varName, vec.x(), vec.y(), vec.z(), vec.w());
     }
     public void setUniform4f(String varName, float x, float y, float z, float w){
         glUniform4f(glGetUniformLocation(program, varName), x, y, z, w);
