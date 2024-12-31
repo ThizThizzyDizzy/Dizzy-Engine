@@ -193,8 +193,14 @@ public class MathUtil{
     public static float clamp(float val, float min, float max){
         return Math.max(min, Math.min(val, max));
     }
+    public static float clamp(float val){
+        return clamp(val, 0, 1);
+    }
     public static double clamp(double val, double min, double max){
         return Math.max(min, Math.min(val, max));
+    }
+    public static double clamp(double val){
+        return clamp(val, 0, 1);
     }
     public static float lerp(float a, float b, float t){
         return a+(b-a)*t;
