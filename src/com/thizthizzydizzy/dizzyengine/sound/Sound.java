@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.sound;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -92,7 +93,7 @@ public class Sound{
             private AudioFormat format;
             private int alFormat;
             {
-                in = AudioSystem.getAudioInputStream(soundSupplier.get());
+                in = AudioSystem.getAudioInputStream(new BufferedInputStream(soundSupplier.get()));
                 format = in.getFormat();
                 if(format.isBigEndian())
                     throw new UnsupportedAudioFileException("Big Endian audio files are not supported!");
