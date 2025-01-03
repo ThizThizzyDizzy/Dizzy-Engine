@@ -25,7 +25,7 @@ public class DizzyEngine{
     public static final Vector2i screenSize = new Vector2i();
     public static final int CURSOR_LIMIT = 16;//size of the arrays used for cursors/input. Set before running INIT
     public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static long window;
+    public static long window;
     private static boolean windowSizeChanged;
     private static Framebuffer screenBuffer = null;
     private static final ArrayList<DizzyLayer> layers = new ArrayList<>();
@@ -34,6 +34,13 @@ public class DizzyEngine{
     private static boolean running;
     private static UILayer currentUIContext;
     private static Thread mainThread;
+    public static boolean startMaximized = true;
+
+    private static final ArrayList<Runnable> initFuncsGLFW = new ArrayList<>();
+    public static void onInitGLFW(Runnable func){
+        initFuncsGLFW.add(func);
+    }
+
     public static void init(String title){
         Logger.init();
         mainThread = Thread.currentThread();
@@ -77,13 +84,15 @@ public class DizzyEngine{
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        initFuncsGLFW.forEach(Runnable::run);
+
         Logger.info("Creating window");
         window = glfwCreateWindow(1200, 700, title, 0, 0);
         if(window==0){
             glfwTerminate();
             throw new RuntimeException("Failed to create GLFW window!");
         }
-        glfwMaximizeWindow(window);
+        if(startMaximized)glfwMaximizeWindow(window);
         Logger.info("Initializing OpenGL");
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);//TODO graphics settings (VSync)
@@ -225,16 +234,21 @@ public class DizzyEngine{
             glStencilMask(0xff);
             glClear(GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
             glStencilMask(0x00);
-            glClearColor(0f, 0f, 0f, 1f);
+            glClearColor(0f, 0f, 0f, 0f);
             glClear(GL_COLOR_BUFFER_BIT);
             synchronized(layers){
-                wrapEvent(layers, (layer)->{
+                wrapEvent(layers, (layer) -> {
                     screenBuffer.bind();//just in case it was changed
                     Renderer.reset();
                     layer.render(deltaTime);
                 });
                 Renderer.reset();
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                
+                // Clear the main window before drawing; this is required for transparency
+                glClearColor(0f, 0f, 0f, 0f);
+                glClear(GL_COLOR_BUFFER_BIT);
+                
                 glDisable(GL_CULL_FACE);
                 glDisable(GL_DEPTH_TEST);
                 Renderer.view(windowViewMatrix);
