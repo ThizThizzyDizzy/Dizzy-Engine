@@ -46,8 +46,9 @@ public class SoundSystem{
         AL.createCapabilities(deviceCapabilites);
 
         //define listener
+        alListener3f(AL_POSITION, 0f, 0f, 0f);
         alListener3f(AL_VELOCITY, 0f, 0f, 0f);
-        alListener3f(AL_ORIENTATION, 0f, 0f, -1f);
+        //alListener3f(AL_ORIENTATION, 0f, 0f, -1f); // This was causing INVALID_ENUM
         checkALError();
         Logger.pop();
     }
@@ -80,6 +81,18 @@ public class SoundSystem{
                 return buffer.setData(format, data, frequency);
         }
         return new SoundBuffer(format, data, frequency);
+    }
+    /**
+     * Gets or creates a sound source
+     * @return ANY SoundSource that has no sounds to play, or a new one if all are in use.
+     */
+    public static SoundSource getSource(){
+        synchronized(sources){
+            for(var source : sources){
+                if(source.getState()==AL_STOPPED)return source;
+            }
+        }
+        return new SoundSource();
     }
     private static void checkALError(){
         int err = alGetError();
