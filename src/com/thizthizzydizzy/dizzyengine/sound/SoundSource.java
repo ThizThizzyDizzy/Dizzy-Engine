@@ -79,11 +79,17 @@ public class SoundSource{
         return alGetSourcei(id, AL_SOURCE_STATE);
     }
     private void startPlaying(Sound sound){
-        Logger.info("Started Playing Sound");
         try{
-            currentSound = sound.stream();
+            var stream = sound.stream();
+            if(!stream.hasNext()){
+                Logger.info("Ignored request to play empty song!");
+            }
+            Logger.info("Started Playing Sound");
+            currentSound = stream;
             consumedBuffers = 0;
-            alSourceQueueBuffers(id, currentSound.next().getID());
+            var buffer = currentSound.next();
+            if(buffer==null)return;
+            alSourceQueueBuffers(id, buffer.getID());
             alSourcePlay(id);
         }catch(IOException|UnsupportedAudioFileException ex){
             Logger.error(ex);
@@ -100,7 +106,7 @@ public class SoundSource{
             for(int i = 0; i<processed; i++){
                 SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
             }
-            consumedBuffers+=processed;
+            consumedBuffers += processed;
             if(currentSound.hasNext()){
                 int queued = alGetSourcei(id, AL_BUFFERS_QUEUED);
                 if(queued<SoundSystem.BUFFER_QUEUE_SIZE){
