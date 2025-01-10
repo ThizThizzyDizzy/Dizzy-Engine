@@ -83,6 +83,7 @@ public class SoundSource{
             var stream = sound.stream();
             if(!stream.hasNext()){
                 Logger.info("Ignored request to play empty song!");
+                return;
             }
             Logger.info("Started Playing Sound");
             currentSound = stream;
