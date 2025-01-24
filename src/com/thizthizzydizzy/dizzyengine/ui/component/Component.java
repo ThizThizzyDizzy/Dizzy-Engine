@@ -101,6 +101,7 @@ public class Component{
                     focusedComponent[id].onFocusGained(id);
                 }
             }
+            if(cursorFocusedComponent[id]==null)return; // This happens if the component is removed during the mouse button event
             //focus is adjusted, now pass along mouse button
             cursorFocusedComponent[id].onMouseButton(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), button, action, mods);
         }else if(action==GLFW_RELEASE&&focusedComponent[id]!=null){
