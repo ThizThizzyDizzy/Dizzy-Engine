@@ -13,10 +13,10 @@ import static org.lwjgl.openal.ALC10.*;
 import org.lwjgl.openal.ALCCapabilities;
 import org.lwjgl.openal.EXTEfx;
 public class SoundSystem{
-    public static int FRAMES_PER_BUFFER = 65536;//Number of frames per buffer for streaming audio
+    public static int FRAMES_PER_BUFFER = 8192;//Number of frames per buffer for streaming audio
     private static final ArrayList<SoundSource> sources = new ArrayList<>();
     private static final ArrayList<SoundBuffer> buffers = new ArrayList<>();
-    public static int BUFFER_QUEUE_SIZE = 8;
+    public static int BUFFER_QUEUE_SIZE = 64;
     public static void init(){
         Logger.push(SoundSystem.class);
         DizzyEngine.addFixedUpdateThread("SoundSystem", SoundSystem::updateSounds, SoundSystem::cleanup, 60);
