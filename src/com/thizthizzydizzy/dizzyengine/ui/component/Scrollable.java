@@ -1,14 +1,15 @@
 package com.thizthizzydizzy.dizzyengine.ui.component;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.ui.layout.Layout;
+import org.joml.Vector2d;
 import org.joml.Vector2f;
 public class Scrollable extends Component{
     public Panel content;
     public ScrollBar vertScrollBar;
     public ScrollBar horizScrollBar;
     public float scrollMagnitude = getUIContext().getUnitScale()*50;
-    private float xScroll;
-    private float yScroll;
+    public float vertScrollbarSize;
+    public float horizScrollbarSize;
     public Scrollable(){
         this(getUIContext().getUnitScale()*25);
     }
@@ -17,6 +18,8 @@ public class Scrollable extends Component{
     }
     public Scrollable(float vertScrollbarSize, float horizScrollbarSize){
         content = super.add(new Panel());
+        this.vertScrollbarSize = vertScrollbarSize;
+        this.horizScrollbarSize = horizScrollbarSize;
     }
     public void setLayout(Layout layout){
         content.setLayout(layout);
@@ -41,26 +44,40 @@ public class Scrollable extends Component{
     @Override
     public void onResize(Vector2f size){
         var preferred = content.getPreferredSize();
+        if(vertScrollBar==null&&size.y-getHorizScrollbarSize()<preferred.y){
+            vertScrollBar = super.add(new ScrollBar(false));
+            vertScrollBar.setWidth(vertScrollbarSize);
+        }
+        if(horizScrollBar==null&&size.x-getVertScrollbarSize()<preferred.x){
+            horizScrollBar = super.add(new ScrollBar(true));
+            horizScrollBar.setHeight(horizScrollbarSize);
+        }
+        if(size.y-getHorizScrollbarSize()>=preferred.y){
+            components.remove(vertScrollBar);
+            vertScrollBar = null;
+        }
+        if(size.x-getVertScrollbarSize()>=preferred.x){
+            components.remove(horizScrollBar);
+            horizScrollBar = null;
+        }
         content.setSize(Math.max(preferred.x, size.x-getVertScrollbarSize()), Math.max(preferred.y, size.y-getHorizScrollbarSize()));
         if(vertScrollBar!=null){
-            vertScrollBar.x = getWidth()-getVertScrollbarSize();
+            vertScrollBar.setSize(vertScrollbarSize, size.y-getHorizScrollbarSize());
+            vertScrollBar.x = size.x-getVertScrollbarSize();
             vertScrollBar.y = 0;
-            vertScrollBar.setHeight(getHeight());
+            vertScrollBar.updateScrollbar(size.y-getHorizScrollbarSize(), content.getHeight());
         }
         if(horizScrollBar!=null){
+            horizScrollBar.setSize(size.x-getVertScrollbarSize(), horizScrollbarSize);
             horizScrollBar.x = 0;
-            horizScrollBar.y = getHeight()-getHorizScrollbarSize();
-            horizScrollBar.setWidth(getWidth());
+            horizScrollBar.y = size.y-getHorizScrollbarSize();
+            horizScrollBar.updateScrollbar(size.x-getVertScrollbarSize(), content.getWidth());
         }
         updateScroll();
     }
     private void updateScroll(){
-        float maxScrollX = getWidth()-getVertScrollbarSize()-content.getWidth();
-        float maxScrollY = getHeight()-getHorizScrollbarSize()-content.getHeight();
-        xScroll = Math.max(0, Math.min(maxScrollX, xScroll));
-        yScroll = Math.max(0, Math.min(maxScrollY, yScroll));
-        content.x = -xScroll;
-        content.y = -yScroll;
+        content.x = horizScrollBar==null?0:-horizScrollBar.getPosition();
+        content.y = vertScrollBar==null?0:-vertScrollBar.getPosition();
     }
     private float getVertScrollbarSize(){
         if(vertScrollBar==null)return 0;
@@ -69,5 +86,15 @@ public class Scrollable extends Component{
     private float getHorizScrollbarSize(){
         if(horizScrollBar==null)return 0;
         return horizScrollBar.getHeight();
+    }
+    @Override
+    public boolean onScroll(int id, Vector2d pos, double dx, double dy){
+        if(cursorFocusedComponent[id]==content&&super.onScroll(id, pos, dx, dy))return true;
+        if((vertScrollBar!=null&&vertScrollBar.onScroll(id, pos, dx, dy))
+            ||(horizScrollBar!=null&&horizScrollBar.onScroll(id, pos, dx, dy))){
+            updateScroll();
+            return true;
+        }
+        return false;
     }
 }

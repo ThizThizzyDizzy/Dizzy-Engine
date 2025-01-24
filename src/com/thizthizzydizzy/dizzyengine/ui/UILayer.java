@@ -2,11 +2,14 @@ package com.thizthizzydizzy.dizzyengine.ui;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
+import com.thizthizzydizzy.dizzyengine.ui.component.ScrollBar;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ColorBackgroundLayer;
+import com.thizthizzydizzy.dizzyengine.ui.component.layer.ColoredLinearHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.TextLabelLayer;
+import com.thizthizzydizzy.dizzyengine.ui.component.layer.TexturedLinearHandle;
 import java.util.HashMap;
 import java.util.function.Supplier;
 import org.joml.Vector2f;
@@ -21,6 +24,9 @@ public abstract class UILayer extends DizzyLayer{
     }
     {
         defaultComponentBackgrounds.put(null, () -> new ColorBackgroundLayer(Color.WHITE));
+    }
+    {
+        defaultComponentHandles.put(ScrollBar.class, () -> new ColoredLinearHandle(Color.BLACK));
     }
     public <T extends Menu> T open(T menu){
         if(this.menu!=null)this.menu.onMenuClosed();

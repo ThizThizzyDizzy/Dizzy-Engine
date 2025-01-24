@@ -108,7 +108,7 @@ public class Component{
         }
     }
     public boolean onScroll(int id, Vector2d pos, double dx, double dy){
-        if(cursorFocusedComponent[id]!=null)return cursorFocusedComponent[id].onScroll(id, new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), dx, dy);
+        if(cursorFocusedComponent[id]!=null)return cursorFocusedComponent[id].onScroll(id, pos==null?null:new Vector2d(pos.x-cursorFocusedComponent[id].x, pos.y-cursorFocusedComponent[id].y), dx, dy);
         return false;
     }
     public void onDrop(int id, Vector2d pos, int count, long names){
