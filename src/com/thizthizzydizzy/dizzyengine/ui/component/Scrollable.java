@@ -10,6 +10,8 @@ public class Scrollable extends Component{
     public float scrollMagnitude = getUIContext().getUnitScale()*50;
     public float vertScrollbarSize;
     public float horizScrollbarSize;
+    public boolean allowVerticalScrolling = true;
+    public boolean allowHorizontalScrolling = true;
     public Scrollable(){
         this(getUIContext().getUnitScale()*25);
     }
@@ -44,19 +46,21 @@ public class Scrollable extends Component{
     @Override
     public void onResize(Vector2f size){
         var preferred = content.getPreferredSize();
-        if(vertScrollBar==null&&size.y-getHorizScrollbarSize()<preferred.y){
+        if(!allowHorizontalScrolling)preferred.x = 0;
+        if(!allowVerticalScrolling)preferred.y = 0;
+        if(vertScrollBar==null&&size.y-getHorizScrollbarSize()<preferred.y&&allowVerticalScrolling){
             vertScrollBar = super.add(new ScrollBar(false));
             vertScrollBar.setWidth(vertScrollbarSize);
         }
-        if(horizScrollBar==null&&size.x-getVertScrollbarSize()<preferred.x){
+        if(horizScrollBar==null&&size.x-getVertScrollbarSize()<preferred.x&&allowHorizontalScrolling){
             horizScrollBar = super.add(new ScrollBar(true));
             horizScrollBar.setHeight(horizScrollbarSize);
         }
-        if(size.y-getHorizScrollbarSize()>=preferred.y){
+        if(vertScrollBar!=null&&(size.y-getHorizScrollbarSize()>=preferred.y||!allowVerticalScrolling)){
             components.remove(vertScrollBar);
             vertScrollBar = null;
         }
-        if(size.x-getVertScrollbarSize()>=preferred.x){
+        if(horizScrollBar!=null&&(size.x-getVertScrollbarSize()>=preferred.x||!allowHorizontalScrolling)){
             components.remove(horizScrollBar);
             horizScrollBar = null;
         }
