@@ -4,8 +4,9 @@ import java.util.HashMap;
 import org.joml.Vector2f;
 public class BorderLayout extends Layout{
     public HashMap<Direction, Component> anchors = new HashMap<>();
-    public void add(Component component, Direction anchor){
+    public <T extends Component> T add(T component, Direction anchor){
         anchors.put(anchor, component);
+        return component;
     }
     @Override
     public void arrangeComponents(Component container){
