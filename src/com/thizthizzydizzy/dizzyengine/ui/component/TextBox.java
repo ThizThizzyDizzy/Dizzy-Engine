@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.ui.component;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import java.util.ArrayList;
+import java.util.function.Predicate;
 import org.joml.Vector2f;
 import static org.lwjgl.glfw.GLFW.*;
 public class TextBox extends Component{
@@ -11,6 +12,7 @@ public class TextBox extends Component{
     private String text;
     public boolean editable = true;
     public boolean runActionsOnTextChange = false;
+    public Predicate<String> filter;
     public TextBox(){
         this("");
     }
@@ -55,6 +57,7 @@ public class TextBox extends Component{
         return text;
     }
     public void setText(String text){
+        if(filter!=null&&!filter.test(text))return;
         this.text = text;
         label.setLabel(text);
         if(runActionsOnTextChange)runActions();
