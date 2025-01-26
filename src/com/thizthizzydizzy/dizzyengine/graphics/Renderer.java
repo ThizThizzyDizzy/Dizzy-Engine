@@ -254,6 +254,9 @@ public class Renderer{
         };
     }
     private static Element createHollowRegularPolygonElement(int sides, float sizeRatio){
+        return createHollowRegularPolygonElement(sides, sizeRatio, sizeRatio);
+    }
+    private static Element createHollowRegularPolygonElement(int sides, float sizeRatioX, float sizeRatioY){
         return new Element(){
             public int vao, vbo, ebo;
             @Override
@@ -268,7 +271,7 @@ public class Renderer{
                     float x = (float)Math.cos(Math.toRadians(angle-90));
                     float y = (float)Math.sin(Math.toRadians(angle-90));
                     verticiesList.addAll(Arrays.asList(x, y, 0f, 0f, 0f, 1f, 0f, 0f));
-                    verticiesList.addAll(Arrays.asList(x*sizeRatio, y*sizeRatio, 0f, 0f, 0f, 1f, 0f, 0f));
+                    verticiesList.addAll(Arrays.asList(x*sizeRatioX, y*sizeRatioY, 0f, 0f, 0f, 1f, 0f, 0f));
                     angle += (360f/sides);
                 }
 
@@ -384,18 +387,22 @@ public class Renderer{
         drawElement(element, x, y, radiusX, radiusY);
     }
     public static void fillHollowRegularPolygon(float x, float y, int sides, float innerRadius, float outerRadius){
+        fillHollowRegularPolygon(x, y, sides, innerRadius, innerRadius, outerRadius, outerRadius);
+    }
+    public static void fillHollowRegularPolygon(float x, float y, int sides, float innerRadiusX, float innerRadiusY, float outerRadiusX, float outerRadiusY){
         if(sides<3)
             throw new IllegalArgumentException("A polygon must have at least 3 sides!");
-        float sizeRatio = innerRadius/outerRadius;
+        float sizeRatioX = innerRadiusX/outerRadiusX;
+        float sizeRatioY = innerRadiusY/outerRadiusY;
         bindTexture(0);
-        String key = "DizzyEngine:HollowRegularPolygon_"+sides+"_"+sizeRatio;
+        String key = "DizzyEngine:HollowRegularPolygon_"+sides+"_"+sizeRatioX+"_"+sizeRatioY;
         var element = elements.get(key);
         if(element==null){
-            element = createHollowRegularPolygonElement(sides, sizeRatio);
+            element = createHollowRegularPolygonElement(sides, sizeRatioX, sizeRatioY);
             elements.put(key, element);
             element.init();
         }
-        drawElement(element, x, y, outerRadius, outerRadius);
+        drawElement(element, x, y, outerRadiusX, outerRadiusY);
     }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
