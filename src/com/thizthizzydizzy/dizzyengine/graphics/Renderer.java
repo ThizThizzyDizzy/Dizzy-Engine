@@ -253,10 +253,10 @@ public class Renderer{
             }
         };
     }
-    private static Element createHollowRegularPolygonElement(int sides, float sizeRatio){
-        return createHollowRegularPolygonElement(sides, sizeRatio, sizeRatio);
-    }
     private static Element createHollowRegularPolygonElement(int sides, float sizeRatioX, float sizeRatioY){
+        return createHollowRegularPolygonSegmentElement(sides, sizeRatioX, sizeRatioY, 0, sides);
+    }
+    private static Element createHollowRegularPolygonSegmentElement(int sides, float sizeRatioX, float sizeRatioY, int left, int right){
         return new Element(){
             public int vao, vbo, ebo;
             @Override
@@ -265,13 +265,24 @@ public class Renderer{
                 vbo = glGenBuffers();
                 ebo = glGenBuffers();
 
+                int actualSides = 0;
+
+                // Hi future thiz, you have found that this does not work. congratz.
+                // You need to properly start at one end of the arc and draw to the other, rather than using this "in range" nonsense.
                 ArrayList<Float> verticiesList = new ArrayList<>();
                 float angle = 0;
                 for(int i = 0; i<sides; i++){
+                    boolean inRange = false;
+                    if(left>right)inRange = i>=left||i<=right;
+                    else
+                        inRange = i>=left&&i<=right;
                     float x = (float)Math.cos(Math.toRadians(angle-90));
                     float y = (float)Math.sin(Math.toRadians(angle-90));
-                    verticiesList.addAll(Arrays.asList(x, y, 0f, 0f, 0f, 1f, 0f, 0f));
-                    verticiesList.addAll(Arrays.asList(x*sizeRatioX, y*sizeRatioY, 0f, 0f, 0f, 1f, 0f, 0f));
+                    if(inRange){
+                        verticiesList.addAll(Arrays.asList(x, y, 0f, 0f, 0f, 1f, 0f, 0f));
+                        verticiesList.addAll(Arrays.asList(x*sizeRatioX, y*sizeRatioY, 0f, 0f, 0f, 1f, 0f, 0f));
+                        actualSides++;
+                    }
                     angle += (360f/sides);
                 }
 
@@ -280,7 +291,7 @@ public class Renderer{
                     verticies[i] = verticiesList.get(i);
 
                 ArrayList<Integer> indiciesList = new ArrayList<>();
-                for(int i = 0; i<sides; i++){
+                for(int i = 0; i<actualSides; i++){
                     indiciesList.add(0);
                     indiciesList.add(i+1);
                     indiciesList.add(i+2);
@@ -329,11 +340,91 @@ public class Renderer{
             }
         };
     }
+    private static Element createHollowCosGearElement(int teeth, int resolution, float toothSizeRatio, float sizeRatio){
+        return new Element(){
+            public int vao, vbo, ebo;
+            @Override
+            public void init(){
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ebo = glGenBuffers();
+
+                ArrayList<Float> verticiesList = new ArrayList<>();
+                float angle = 0;
+                for(int i = 0; i<teeth*resolution; i++){
+                    float toothRad = 1+(float)((toothSizeRatio/2)*Math.cos(Math.toRadians(teeth*angle)));
+                    float x = (float)Math.cos(Math.toRadians(angle-90));
+                    float y = (float)Math.sin(Math.toRadians(angle-90));
+                    verticiesList.addAll(Arrays.asList(x*toothRad, y*toothRad, 0f, 0f, 0f, 1f, 0f, 0f));
+                    verticiesList.addAll(Arrays.asList(x*sizeRatio, y*sizeRatio, 0f, 0f, 0f, 1f, 0f, 0f));
+                    angle += (360f/(teeth*resolution));
+                }
+
+                float[] verticies = new float[verticiesList.size()];
+                for(int i = 0; i<verticiesList.size(); i++)
+                    verticies[i] = verticiesList.get(i);
+
+                ArrayList<Integer> indiciesList = new ArrayList<>();
+                for(int i = 0; i<teeth*resolution; i++){
+                    indiciesList.add(0);
+                    indiciesList.add(i+1);
+                    indiciesList.add(i+2);
+                    indiciesList.add(0);
+                    indiciesList.add(i+2);
+                    indiciesList.add(i+3);
+                }
+                int[] indicies = new int[indiciesList.size()];
+                for(int i = 0; i<indiciesList.size(); i++){
+                    indicies[i] = indiciesList.get(i);
+                }
+
+                glBindVertexArray(vao);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+                //pos
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+                //norm
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+                //tex
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+                glBindVertexArray(0);
+            }
+            @Override
+            public void draw(){
+                glBindVertexArray(vao);
+                glDrawElements(GL_TRIANGLES, teeth*resolution*6, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
+            }
+            @Override
+            public void cleanup(){
+                glDeleteBuffers(ebo);
+                glDeleteBuffers(vbo);
+                glDeleteVertexArrays(vao);
+            }
+        };
+    }
     public static void initElements(){
         for(Element e : elements.values())e.init();
     }
     public static void cleanupElements(){
         for(Element e : elements.values())e.cleanup();
+    }
+    public static void drawHorizontalLine(float x1, float y, float x2, float thickness, int texture){
+        fillRect(x1, y-thickness/2, x2, y+thickness/2, texture);
+    }
+    public static void drawVerticalLine(float x, float y1, float y2, float thickness, int texture){
+        fillRect(x-thickness/2, y1, x+thickness/2, y2, texture);
     }
     public static void fillRect(float left, float top, float right, float bottom){
         fillRect(left, top, right, bottom, 0);
@@ -403,6 +494,46 @@ public class Renderer{
             element.init();
         }
         drawElement(element, x, y, outerRadiusX, outerRadiusY);
+    }
+    public static void fillHollowRegularPolygonSegment(float x, float y, int sides, float innerRadiusX, float innerRadiusY, float outerRadiusX, float outerRadiusY, int left, int right){
+        if(sides<3)
+            throw new IllegalArgumentException("A polygon must have at least 3 sides!");
+        while(left<0)left += sides;
+        while(right<0)right += sides;
+        while(left>sides)left -= sides;
+        while(right>sides)right -= sides;
+        float sizeRatioX = innerRadiusX/outerRadiusX;
+        float sizeRatioY = innerRadiusY/outerRadiusY;
+        bindTexture(0);
+        String key = "DizzyEngine:HollowRegularPolygonSegment_"+sides+"_"+sizeRatioX+"_"+sizeRatioY+"_"+left+"_"+right;
+        var element = elements.get(key);
+        if(element==null){
+            element = createHollowRegularPolygonSegmentElement(sides, sizeRatioX, sizeRatioY, left, right);
+            elements.put(key, element);
+            element.init();
+        }
+        drawElement(element, x, y, outerRadiusX, outerRadiusY);
+    }
+    public static void fillHollowCosGear(float x, float y, float innerRadius, float outerRadius, float toothSize, int teeth, float rotation){
+        fillHollowCosGear(x, y, innerRadius, outerRadius, toothSize, teeth, rotation, 10);
+    }
+    public static void fillHollowCosGear(float x, float y, float innerRadius, float outerRadius, float toothSize, int teeth, float rotation, int resolution){
+        if(teeth<3)
+            throw new IllegalArgumentException("A gear must have at least 3 teeth!");
+        float sizeRatio = innerRadius/outerRadius;
+        float toothSizeRatio = toothSize/outerRadius;
+        bindTexture(0);
+        String key = "DizzyEngine:HollowCosGear_"+teeth+"_"+resolution+"_"+toothSizeRatio+"_"+sizeRatio;
+        var element = elements.get(key);
+        if(element==null){
+            element = createHollowCosGearElement(teeth, resolution, toothSizeRatio, sizeRatio);
+            elements.put(key, element);
+            element.init();
+        }
+        translate(x, y);
+        modelMatStack.mul(new Matrix4f().rotate(rotation, 0, 0, 1));
+        drawElement(element, 0, 0, outerRadius, outerRadius);
+        unTranslate();
     }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
