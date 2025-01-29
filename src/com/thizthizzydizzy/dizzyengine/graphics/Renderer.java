@@ -10,6 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector4f;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
@@ -697,8 +698,11 @@ public class Renderer{
     public static void setColor(Color c, float alpha){
         setColor(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f, c.getAlpha()/255f*alpha);
     }
+    private static Vector4f currentColor = new Vector4f(1, 1, 1, 1);
     public static void setColor(float red, float green, float blue, float alpha){
+        if(currentColor.equals(red, green, blue, alpha))return;
         shader.setUniform4f("color", red, green, blue, alpha);
+        currentColor.set(red, green, blue, alpha);
     }
     public static void setDefaultShader(Shader shader){
         defaultShader = shader;
@@ -741,14 +745,17 @@ public class Renderer{
     public static void projection(Matrix4f matrix){
         shader.setUniformMatrix4fv("projection", matrix);
     }
+    private static int boundTexture = -1;
     public static void unbindTexture(){
         bindTexture(0);
     }
     public static void bindTexture(int tex){
         glBindTexture(GL_TEXTURE_2D, tex);
+        if(boundTexture==tex)return;
         if(tex==0)shader.setUniform4f("noTex", 1f, 1f, 1f, 0f);
         else
             shader.setUniform4f("noTex", 0f, 0f, 0f, 0f);
+        boundTexture = tex;
     }
     public static void bound(float left, float top, float right, float bottom){
         if(boundStack.size()>=1024)
