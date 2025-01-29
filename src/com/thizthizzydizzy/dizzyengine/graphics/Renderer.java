@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Stack;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import static org.lwjgl.opengl.GL11.*;
@@ -535,6 +537,81 @@ public class Renderer{
         drawElement(element, 0, 0, outerRadius, outerRadius);
         unTranslate();
     }
+    /**
+     * Wraps text around \n and at a specified length
+     *
+     * @param text The full string of text to draw
+     * @param width The maximum width for each line
+     * @param height The text height, used to measure string width
+     * @param drawFunc The function to draw each line of text (line number
+     * starting at 0, and line text)
+     */
+    public static void wrapText(String text, float width, float height, BiConsumer<Integer, String> drawFunc){
+        wrapText(text, (i) -> width, height, drawFunc);
+    }
+    /**
+     * Wraps text around \n and at a specified length
+     *
+     * @param text The full string of text to draw
+     * @param width The maximum width for each line (as a function of line #)
+     * @param height The text height, used to measure string width
+     * @param drawFunc The function to draw each line of text (line number
+     * starting at 0, and line text)
+     */
+    public static void wrapText(String text, Function<Integer, Float> width, float height, BiConsumer<Integer, String> drawFunc){
+        int lineNumber = 0;
+        while(!text.isEmpty()){
+            String line = text.charAt(0)+"";
+            int i;
+            for(i = 1; i<text.length(); i++){
+                if(line.contains("\n"))break;//next line
+                String newLine = line+text.charAt(i);
+                if(getStringWidth(newLine, height)>width.apply(lineNumber))break;
+                line = newLine;
+            }
+            drawFunc.accept(lineNumber++, line);
+            text = text.substring(i);
+        }
+    }
+    /**
+     * Wraps text around words separated by spaces, and around \n. Ignores
+     * leading & trailing whitespace.
+     *
+     * @param text The full string of text to draw
+     * @param width The maximum width for each line
+     * @param height The text height, used to measure string width
+     * @param drawFunc The function to draw each line of text (line number
+     * starting at 0, and line text)
+     */
+    public static void wordWrapText(String text, float width, float height, BiConsumer<Integer, String> drawFunc){
+        wordWrapText(text, (i) -> width, height, drawFunc);
+    }
+    /**
+     * Wraps text around words separated by spaces, and around \n. Ignores
+     * leading & trailing whitespace.
+     *
+     * @param text The full string of text to draw
+     * @param width The maximum width for each line (as a function of line #)
+     * @param height The text height, used to measure string width
+     * @param drawFunc The function to draw each line of text (line number
+     * starting at 0, and line text)
+     */
+    public static void wordWrapText(String text, Function<Integer, Float> width, float height, BiConsumer<Integer, String> drawFunc){
+        ArrayList<String> words = new ArrayList<>(Arrays.asList(text.replace("\n", "\n ").split(" ")));
+        int lineNumber = 0;
+        while(!words.isEmpty()){
+            String line = words.remove(0);
+
+            while(!words.isEmpty()){
+                if(line.contains("\n"))break;//next line
+                String newLine = line+" "+words.get(0);
+                if(getStringWidth(newLine, height)>width.apply(lineNumber))break;
+                words.remove(0);
+                line = newLine;
+            }
+            drawFunc.accept(lineNumber++, line.trim());
+        }
+    }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
         bindTexture(font.texture);
@@ -563,6 +640,14 @@ public class Renderer{
             width = getStringWidth(text, bottom-top);
         }
         drawText((left+right)/2-width/2, top, text, bottom-top);
+    }
+    public static void drawRightText(float left, float top, float right, float bottom, String text){
+        float width = getStringWidth(text, bottom-top);
+        while(width>right-left&&!text.isEmpty()){
+            text = text.substring(0, text.length()-1);
+            width = getStringWidth(text, bottom-top);
+        }
+        drawText((left+right)/2-width, top, text, bottom-top);
     }
     public static void drawText(float left, float top, float right, float bottom, String text){
         float width = getStringWidth(text, bottom-top);
