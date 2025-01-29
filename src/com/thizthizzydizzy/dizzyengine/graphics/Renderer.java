@@ -447,6 +447,28 @@ public class Renderer{
         bindTexture(texture);
         drawElement("rect", left, top, right-left, bottom-top);
     }
+    // Much faster than using stencil bounds
+    public static void fillRectWithBound(float left, float top, float right, float bottom, int texture, float leftBound, float topBound, float rightBound, float bottomBound){
+        float width = right-left;
+        float height = bottom-top;
+
+        float rectLeft = Math.max(left, leftBound);
+        float rectTop = Math.max(top, topBound);
+        float rectRight = Math.min(right, rightBound);
+        float rectBottom = Math.min(bottom, bottomBound);
+
+        float rectWidth = rectRight-rectLeft;
+        float rectHeight = rectBottom-rectTop;
+        if(rectWidth<=0||rectHeight<=0)return;//bounded out of existence
+
+        float texLeft = Math.max(0, leftBound-left)/width;
+        float texTop = Math.max(0, topBound-top)/height;
+
+        float texRight = 1+Math.min(0, rightBound-right)/width;
+        float texBottom = 1+Math.min(0, bottomBound-bottom)/height;
+
+        fillRect(rectLeft, rectTop, rectRight, rectBottom, texture, texLeft, texTop, texRight, texBottom);
+    }
     public static void fillRect(float left, float top, float right, float bottom, int texture, float texLeft, float texTop, float texRight, float texBottom){
         if(right<left){
             float r = left;
