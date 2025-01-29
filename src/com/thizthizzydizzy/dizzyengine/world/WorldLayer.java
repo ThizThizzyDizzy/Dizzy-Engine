@@ -6,7 +6,7 @@ import org.joml.Vector3i;
 public abstract class WorldLayer extends DizzyLayer{
     public float panX;
     public float panY;
-    public float zoom;
+    public float zoom = 1;
     private final Vector3f chunkSize;
     /**
      * WorldLayer is a layer made for any world (2D or 3D) with support for 2D
