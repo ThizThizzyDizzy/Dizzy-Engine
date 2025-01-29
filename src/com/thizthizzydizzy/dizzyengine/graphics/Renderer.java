@@ -461,7 +461,14 @@ public class Renderer{
             top = t;
         }
         bindTexture(texture);
-        drawElement(createRectangleElement(texLeft, texTop, texRight, texBottom), left, top, right-left, bottom-top);
+        String key = "DizzyEngine:Rectangle_"+texLeft+"_"+texTop+"_"+texRight+"_"+texBottom;
+        var element = elements.get(key);
+        if(element==null){
+            element = createRectangleElement(texLeft, texTop, texRight, texBottom);
+            elements.put(key, element);
+            element.init();
+        }
+        drawElement(element, left, top, right-left, bottom-top);
     }
     public static void fillRegularPolygon(float x, float y, int sides, float radius){
         fillRegularPolygon(x, y, sides, radius, radius);
