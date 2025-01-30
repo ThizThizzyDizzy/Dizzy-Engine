@@ -1,6 +1,7 @@
 package com.thizthizzydizzy.dizzyengine;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
@@ -204,6 +205,7 @@ public class DizzyEngine{
         double lastFrame = -1;
         Matrix4f windowProjectionMatrix = new Matrix4f();
         while(running){
+            PerformanceTracker.reset();
             Logger.reset();
             Logger.push(DizzyEngine.class);
             if(glfwWindowShouldClose(window)){

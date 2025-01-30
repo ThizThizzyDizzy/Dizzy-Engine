@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
+import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -68,30 +69,36 @@ public class Shader{
     }
     public void setUniform1f(String varName, float x){
         glUniform1f(glGetUniformLocation(program, varName), x);
+        PerformanceTracker.glUniform1f++;
     }
     public void setUniform2f(String varName, Vector2fc vec){
         setUniform2f(varName, vec.x(), vec.y());
     }
     public void setUniform2f(String varName, float x, float y){
         glUniform2f(glGetUniformLocation(program, varName), x, y);
+        PerformanceTracker.glUniform2f++;
     }
     public void setUniform3f(String varName, Vector3fc vec){
         setUniform3f(varName, vec.x(), vec.y(), vec.z());
     }
     public void setUniform3f(String varName, float x, float y, float z){
         glUniform3f(glGetUniformLocation(program, varName), x, y, z);
+        PerformanceTracker.glUniform3f++;
     }
     public void setUniform4f(String varName, Vector4fc vec){
         setUniform4f(varName, vec.x(), vec.y(), vec.z(), vec.w());
     }
     public void setUniform4f(String varName, float x, float y, float z, float w){
         glUniform4f(glGetUniformLocation(program, varName), x, y, z, w);
+        PerformanceTracker.glUniform4f++;
     }
     public void setUniform1i(String varName, int x){
         glUniform1i(glGetUniformLocation(program, varName), x);
+        PerformanceTracker.glUniform1i++;
     }
     public void setUniformMatrix4fv(String model, Matrix4f matrix){
         glUniformMatrix4fv(glGetUniformLocation(program, model), false, matrix.get(new float[16]));
+        PerformanceTracker.glUniformMatrix4f++;
     }
     public void use(){
         glUseProgram(program);

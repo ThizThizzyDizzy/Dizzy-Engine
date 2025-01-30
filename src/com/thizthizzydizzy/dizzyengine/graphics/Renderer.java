@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.ArrayList;
@@ -120,6 +121,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
                 glBindVertexArray(0);
             }
             @Override
@@ -176,6 +178,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
                 glBindVertexArray(0);
             }
             @Override
@@ -246,6 +249,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, sides*3, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
                 glBindVertexArray(0);
             }
             @Override
@@ -333,6 +337,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, sides*6, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
                 glBindVertexArray(0);
             }
             @Override
@@ -407,6 +412,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, teeth*resolution*6, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
                 glBindVertexArray(0);
             }
             @Override
