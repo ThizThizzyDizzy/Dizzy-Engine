@@ -489,8 +489,6 @@ public class Renderer{
             bottom = b;
             top = t;
         }
-        texTop = 1-texTop;
-        texBottom = 1-texBottom;
         bindTexture(texture);
         String key = "DizzyEngine:Rectangle_"+texLeft+"_"+texTop+"_"+texRight+"_"+texBottom;
         var element = elements.get(key);
