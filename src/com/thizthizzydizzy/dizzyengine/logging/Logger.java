@@ -50,8 +50,9 @@ public class Logger{
         PrintStream out = type==MessageType.ERROR?System.err:System.out;
         var stack = getSourceStack();
         String source = stack.isEmpty()?null:stack.peek();
-        String err = message!=null?message+"\n":"";
+        String err = message!=null?message:"";
         if(t!=null){
+            if(message!=null)err+="\n";
             err += t.getClass().getName()+": "+t.getMessage();
             for(var stackTrace : t.getStackTrace())err += "\n"+stackTrace.toString();
         }

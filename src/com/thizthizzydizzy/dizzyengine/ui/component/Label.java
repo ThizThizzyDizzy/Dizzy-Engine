@@ -10,6 +10,9 @@ public class Label extends Component{
     public Label(String text){
         label.setLabel(text);
     }
+    public Label(Object text){
+        label.setLabel(text);
+    }
     @Override
     public void draw(double deltaTime){
         if(background!=null)background.draw(this, deltaTime);

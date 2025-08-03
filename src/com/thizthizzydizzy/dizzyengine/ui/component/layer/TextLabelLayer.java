@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine.ui.component.layer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
+import java.util.Objects;
 import org.joml.Vector2f;
 public class TextLabelLayer extends ComponentLabel{
     public String text;
@@ -12,10 +13,7 @@ public class TextLabelLayer extends ComponentLabel{
     }
     @Override
     public void setLabel(Object label){
-        if(label==null)text = null;
-        else if(label instanceof String str)this.text = str;
-        else
-            throw new IllegalArgumentException("Invalid label object! Expected String, found "+label.getClass().getName());
+        this.text = Objects.toString(label);
     }
     @Override
     public void draw(Component c, double deltaTime){

@@ -23,6 +23,7 @@ public class Renderer{
     private static Stack<Bound> boundStack = new Stack<>();
     private static Matrix4fStack modelMatStack = new Matrix4fStack(64);
     private static final HashMap<String, Element> elements = new HashMap<>();
+    public static float preferredTextScale = 24;
     public static void setDefaultFont(Font f){
         defaultFont = f;
         if(font==null)font = f;
@@ -827,7 +828,7 @@ public class Renderer{
         redrawStencil();
     }
     public static float getPreferredTextHeight(){
-        return DizzyEngine.getUIContext().getUnitScale()*24;
+        return DizzyEngine.getUIContext().getUnitScale()*preferredTextScale;
     }
     private static abstract class Bound{
         private final Matrix4f modelMatrix;
