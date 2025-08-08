@@ -1,13 +1,13 @@
 package com.thizthizzydizzy.dizzyengine;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.function.Consumer;
-public class UpdateThread{
+public class FixedUpdateThread{
     public final Thread thread;
     private final Consumer<Long> func;
     private final long deltaTimeNanos;
     public long lastUpdate;
     private long updateCounter;
-    public UpdateThread(String name, Consumer<Long> func, Runnable cleanupFunc, int updateRate){
+    public FixedUpdateThread(String name, Consumer<Long> func, Runnable cleanupFunc, int updateRate){
         this.func = func;
         deltaTimeNanos = 1_000_000_000l/updateRate;
         thread = new Thread(() -> {

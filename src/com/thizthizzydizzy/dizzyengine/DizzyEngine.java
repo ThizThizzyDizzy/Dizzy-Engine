@@ -30,7 +30,8 @@ public class DizzyEngine{
     private static boolean windowSizeChanged;
     private static Framebuffer screenBuffer = null;
     private static final ArrayList<DizzyLayer> layers = new ArrayList<>();
-    private static final ArrayList<UpdateThread> updateThreads = new ArrayList<>();
+    private static final ArrayList<FixedUpdateThread> fixedUpdateThreads = new ArrayList<>();
+    private static final ArrayList<UnmanagedUpdateThread> unmanagedUpdateThreads = new ArrayList<>();
     private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
     private static boolean running;
     private static UILayer currentUIContext;
@@ -47,7 +48,8 @@ public class DizzyEngine{
         mainThread = Thread.currentThread();
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             boolean isCrash = thread==mainThread;
-            for(var t : updateThreads)if(thread==t.thread)isCrash = true;
+            for(var t : fixedUpdateThreads)if(thread==t.thread)isCrash = true;
+            for(var t : unmanagedUpdateThreads)if(thread==t.thread)isCrash = true;
             if(isCrash){
                 running = false;
                 Logger.setCrashLogFile(new File("crash-reports", "crash-"+LocalDateTime.now().toString().replace(':', '-')+".log"));
@@ -165,11 +167,19 @@ public class DizzyEngine{
         }
         Logger.pop();
     }
-    public static UpdateThread addFixedUpdateThread(String name, Consumer<Long> updateThread, Runnable cleanupFunc, int updateRate){
+    public static FixedUpdateThread addFixedUpdateThread(String name, Consumer<Long> updateThread, Runnable cleanupFunc, int updateRate){
         Logger.push("DizzyEngine");
         Logger.info("Adding fixed update thread "+name+" at "+updateRate+" updates per second");
-        UpdateThread thread;
-        updateThreads.add(thread = new UpdateThread(name, updateThread, cleanupFunc, updateRate));
+        FixedUpdateThread thread;
+        fixedUpdateThreads.add(thread = new FixedUpdateThread(name, updateThread, cleanupFunc, updateRate));
+        Logger.pop();
+        return thread;
+    }
+    public static UnmanagedUpdateThread addUnmanagedUpdateThread(String name, Consumer<Long> updateThread, Runnable cleanupFunc, int delayMillis){
+        Logger.push("DizzyEngine");
+        Logger.info("Adding unmanaged update thread "+name);
+        UnmanagedUpdateThread thread;
+        unmanagedUpdateThreads.add(thread = new UnmanagedUpdateThread(name, updateThread, cleanupFunc, delayMillis));
         Logger.pop();
         return thread;
     }
@@ -201,7 +211,8 @@ public class DizzyEngine{
     }
     public static void start(){
         running = true;
-        for(var thread : updateThreads)thread.start();
+        for(var thread : unmanagedUpdateThreads)thread.start();
+        for(var thread : fixedUpdateThreads)thread.start();
         double lastFrame = -1;
         Matrix4f windowProjectionMatrix = new Matrix4f();
         while(running){
