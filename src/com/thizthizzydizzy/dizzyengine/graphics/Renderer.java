@@ -765,16 +765,7 @@ public class Renderer{
     public static void bound(float left, float top, float right, float bottom){
         if(boundStack.size()>=1024)
             throw new StackOverflowError("Exceeded render  bound stack limit! ("+boundStack.size()+")");
-        boundStack.push(new Bound(modelMatStack.get(new Matrix4f())){
-            @Override
-            void draw(){
-                var size = DizzyEngine.screenSize;
-                fillRect(-size.x, -size.y, left, size.y);
-                fillRect(left, -size.y, right, top);
-                fillRect(left, bottom, right, size.y);
-                fillRect(right, -size.y, size.x, size.y);
-            }
-        });
+        boundStack.push(new Bound(modelMatStack.get(new Matrix4f()), left, top, right, bottom));
         redrawStencil();
     }
     public static void translate(float x, float y){
@@ -830,12 +821,26 @@ public class Renderer{
     public static float getPreferredTextHeight(){
         return DizzyEngine.getUIContext().getUnitScale()*preferredTextScale;
     }
-    private static abstract class Bound{
+    private static class Bound{
         private final Matrix4f modelMatrix;
-        public Bound(Matrix4f modelMatrix){
+        private final float left;
+        private final float top;
+        private final float right;
+        private final float bottom;
+        public Bound(Matrix4f modelMatrix, float left, float top, float right, float bottom){
             this.modelMatrix = modelMatrix;
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
         }
-        abstract void draw();
+        public void draw(){
+            var size = DizzyEngine.screenSize;
+            fillRect(-size.x, -size.y, left, size.y);
+            fillRect(left, -size.y, right, top);
+            fillRect(left, bottom, right, size.y);
+            fillRect(right, -size.y, size.x, size.y);
+        }
     }
     public static void drawElement(String name, float x, float y, float scaleX, float scaleY){
         drawElement(name, x, y, 1, scaleX, scaleY, 1);
