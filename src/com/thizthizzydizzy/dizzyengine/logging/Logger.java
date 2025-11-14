@@ -41,7 +41,8 @@ public class Logger{
     public static void pop(){
         var stack = getSourceStack();
         if(stack.isEmpty())warn("Tried to pop empty logger source stack!", new RuntimeException());
-        else getSourceStack().pop();
+        else
+            getSourceStack().pop();
     }
     public static void reset(){
         getSourceStack().clear();
@@ -50,10 +51,13 @@ public class Logger{
         PrintStream out = type==MessageType.ERROR?System.err:System.out;
         var stack = getSourceStack();
         String source = stack.isEmpty()?null:stack.peek();
-        String err = message!=null?message+"\n":"";
-        if(t!=null){
+        String err = message!=null?message:"";
+        while(t!=null){
+            if(message!=null)err += "\n";
             err += t.getClass().getName()+": "+t.getMessage();
             for(var stackTrace : t.getStackTrace())err += "\n"+stackTrace.toString();
+            t = t.getCause();
+            if(t!=null)err += "\nCaused by:";
         }
         String line = LocalDateTime.now().toString()+" "+Thread.currentThread().getName()+" "+type.toString()+": "+(source!=null?"["+source+"] ":"")+err;
         out.println(line);

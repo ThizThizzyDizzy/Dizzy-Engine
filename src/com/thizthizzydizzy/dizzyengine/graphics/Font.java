@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
+import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class Font{
         return loadFont(fontData, yOff, fontHeight, fontHeight*8);
     }
     public static Font loadFont(ByteBuffer fontData, float yOff, float height, int bitmapSize){
+        if(DizzyEngine.headless)return null;
         ByteBuffer buffer = BufferUtils.createByteBuffer(bitmapSize*bitmapSize*4);//no idea what this is used for, but it's here
         STBTTBakedChar.Buffer charBuffer = STBTTBakedChar.create(255);
         STBTruetype.stbtt_BakeFontBitmap(fontData, height, buffer, bitmapSize, bitmapSize, 0, charBuffer);

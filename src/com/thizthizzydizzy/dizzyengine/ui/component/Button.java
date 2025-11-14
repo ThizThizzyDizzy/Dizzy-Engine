@@ -15,7 +15,10 @@ public class Button extends Component{
     public Button(){
     }
     public Button(String text){
-        this(text, true);
+        label.setLabel(text);
+    }
+    public Button(Object text){
+        label.setLabel(text);
     }
     public Button(String text, boolean enabled){
         label.setLabel(text);
