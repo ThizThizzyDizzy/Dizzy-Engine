@@ -1,8 +1,11 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,12 +27,46 @@ public class Renderer{
     private static Matrix4fStack modelMatStack = new Matrix4fStack(64);
     private static final HashMap<String, Element> elements = new HashMap<>();
     public static float preferredTextScale = 24;
+    private static final String[] fallbackFontPaths = new String[]{
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/liberation-fonts/LiberationSans-Regular.ttf",
+        "C:\\Windows\\Fonts\\comic.ttf"
+    };
     public static void setDefaultFont(Font f){
         defaultFont = f;
         if(font==null)font = f;
     }
     public static void setFont(Font f){
         font = f;
+    }
+    public static Font getFont(){
+        Logger.push(Renderer.class);
+        if(font==null&&defaultFont==null){
+            Logger.warn("defaultFont is null! Attempting to set default font to a fallback font.");
+            for(String path : fallbackFontPaths){
+                Logger.warn("Attempting to load fallback font: "+path);
+                Font fallbackFont = null;
+                try{
+                    fallbackFont = Font.loadFont(ResourceManager.loadData(new FileInputStream(new File(path))));
+                }catch(Exception ex){
+                    Logger.warn("Failed to load fallback font: "+path, ex);
+                }
+                if(fallbackFont!=null){
+                    setDefaultFont(fallbackFont);
+                    Logger.warn("Set fallback font: "+path);
+                    break;
+                }
+            }
+            if(defaultFont==null){
+                Logger.error("Unable to set fallback font!");
+            }
+        }
+        if(font==null){
+            Logger.warn("font is null! Setting to default font.");
+            setFont(defaultFont);
+        }
+        Logger.pop();
+        return font;
     }
     public static void resetFont(){
         font = defaultFont;
@@ -426,6 +463,8 @@ public class Renderer{
     }
     public static void initElements(){
         for(Element e : elements.values())e.init();
+        
+        DizzyEngine.addShutdownHook(Renderer::cleanupElements);
     }
     public static void cleanupElements(){
         for(Element e : elements.values())e.cleanup();
@@ -603,7 +642,8 @@ public class Renderer{
             for(i = 1; i<text.length(); i++){
                 if(line.contains("\n"))break;//next line
                 String newLine = line+text.charAt(i);
-                if(getStringWidth(newLine, height)>width.apply(lineNumber))break;
+                if(getStringWidth(newLine, height)>width.apply(lineNumber))
+                    break;
                 line = newLine;
             }
             drawFunc.accept(lineNumber++, line);
@@ -642,7 +682,8 @@ public class Renderer{
             while(!words.isEmpty()){
                 if(line.contains("\n"))break;//next line
                 String newLine = line+" "+words.get(0);
-                if(getStringWidth(newLine, height)>width.apply(lineNumber))break;
+                if(getStringWidth(newLine, height)>width.apply(lineNumber))
+                    break;
                 words.remove(0);
                 line = newLine;
             }
@@ -651,6 +692,7 @@ public class Renderer{
     }
     public static void drawText(float x, float y, String text, float height){
         if(height<0)return;
+        var font = getFont();
         bindTexture(font.texture);
         for(int i = 0; i<text.length(); i++){
             char c = text.charAt(i);
@@ -695,7 +737,7 @@ public class Renderer{
         drawText(left, top, text, bottom-top);
     }
     public static float getStringWidth(String text, float height){
-        return font.getStringWidth(text, height);
+        return getFont().getStringWidth(text, height);
     }
     public static void setColor(Color c){
         setColor(c.getRed()/255f, c.getGreen()/255f, c.getBlue()/255f, c.getAlpha()/255f);

@@ -10,6 +10,7 @@ import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import org.joml.Matrix4f;
@@ -39,8 +40,9 @@ public class DizzyEngine{
     public static boolean startMaximized = true;
 
     private static final ArrayList<Runnable> initFuncsGLFW = new ArrayList<>();
-    
+
     public static boolean headless = false;
+    private static final ArrayList<Runnable> shutdownHooks = new ArrayList<>();
     public static void onInitGLFW(Runnable func){
         initFuncsGLFW.add(func);
     }
@@ -60,12 +62,15 @@ public class DizzyEngine{
                 Logger.error("==== CRASH REPORT ====");
                 Logger.error(title);
                 Logger.error("Layers:");
-                for(var layer : layers)Logger.error("- "+layer.getClass().getName());
+                for(var layer : layers)
+                    Logger.error("- "+layer.getClass().getName());
                 Logger.error("Logger Stack:");
                 var stack = Logger.getSourceStack();
-                for(int i = 0; i<stack.size()-1; i++)Logger.error("- "+stack.get(i));
+                for(int i = 0; i<stack.size()-1; i++)
+                    Logger.error("- "+stack.get(i));
                 Logger.error("===== GAME CRASH =====");
                 Logger.pop();
+                runShutdownHooks();
             }
             Logger.error("Uncaught Exception in Thread "+thread.getName()+":", ex);
         });
@@ -80,7 +85,11 @@ public class DizzyEngine{
                     Logger.error("GLFW ERROR "+err+": "+MemoryUtil.memUTF8(description));
                 }
             });
-            if(!glfwInit())throw new RuntimeException("Failed to initialize GLFW!");
+            if(!glfwInit())
+                throw new RuntimeException("Failed to initialize GLFW!");
+            shutdownHooks.add(()->{
+                glfwTerminate();
+            });
             Logger.info("Initializing window");
             //window
             glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
@@ -132,28 +141,36 @@ public class DizzyEngine{
             }
             Logger.info("Initializing Input");
             glfwSetCharCallback(window, (window, codepoint) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onChar(0, codepoint));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onChar(0, codepoint));
             });
             glfwSetCharModsCallback(window, (window, codepoint, mods) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCharMods(0, codepoint, mods));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onCharMods(0, codepoint, mods));
             });
             glfwSetCursorEnterCallback(window, (window, entered) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCursorEnter(0, entered));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onCursorEnter(0, entered));
             });
             glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onCursorPos(0, xpos, ypos));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onCursorPos(0, xpos, ypos));
             });
             glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onKey(0, key, scancode, action, mods));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onKey(0, key, scancode, action, mods));
             });
             glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onMouseButton(0, button, action, mods));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onMouseButton(0, button, action, mods));
             });
             glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onScroll(0, xoffset, yoffset));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onScroll(0, xoffset, yoffset));
             });
             glfwSetDropCallback(window, (window, count, names) -> {
-                if(window==DizzyEngine.window)wrapEvent(layers, (layer) -> layer.onDrop(0, count, names));
+                if(window==DizzyEngine.window)
+                    wrapEvent(layers, (layer) -> layer.onDrop(0, count, names));
             });
             glfwSetJoystickCallback((jid, event) -> {
                 wrapEvent(layers, (layer) -> layer.onJoystick(0, jid, event));
@@ -223,6 +240,9 @@ public class DizzyEngine{
         for(var thread : fixedUpdateThreads)thread.start();
         double lastFrame = -1;
         Matrix4f windowProjectionMatrix = new Matrix4f();
+        shutdownHooks.add(() -> {
+            if(screenBuffer!=null)screenBuffer.destroy();
+        });
         while(running){
             PerformanceTracker.reset();
             Logger.reset();
@@ -289,10 +309,7 @@ public class DizzyEngine{
             }
         }
         Logger.info("Shutting down...");
-        screenBuffer.destroy();
-        Renderer.cleanupElements();
-        glfwTerminate();
-        Logger.cleanup();
+        runShutdownHooks();
     }
     public static void stop(){
         running = false;
@@ -313,11 +330,29 @@ public class DizzyEngine{
         return found;
     }
     public static UILayer getUIContext(){
-        if(Thread.currentThread()!=mainThread)Logger.warn("UI context was accessed outside the main thread!");
-        if(currentUIContext==null)throw new UnsupportedOperationException("No UI context found!");
+        if(Thread.currentThread()!=mainThread)
+            Logger.warn("UI context was accessed outside the main thread!");
+        if(currentUIContext==null)
+            throw new UnsupportedOperationException("No UI context found!");
         return currentUIContext;
     }
     public static boolean isKeyDown(int key){
         return glfwGetKey(window, key)==GLFW_PRESS;
+    }
+    public static void addShutdownHook(AutoCloseable closeable){
+        shutdownHooks.add(() -> {
+            try{
+                closeable.close();
+            }catch(Exception ex){
+                Logger.error("Error closing AutoCloseable shutdown hook: "+closeable.getClass().getName()+"!", ex);
+            }
+        });
+    }
+    private static void runShutdownHooks(){
+        for(Iterator<Runnable> it = shutdownHooks.iterator(); it.hasNext();){
+            Runnable hook = it.next();
+            hook.run();
+            it.remove(); // Make sure they can only ever be run once
+        }
     }
 }

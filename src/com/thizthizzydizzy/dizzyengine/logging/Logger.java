@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.logging;
+import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -14,6 +15,7 @@ public class Logger{
         try{
             new File("logs").mkdir();
             logStream = new PrintStream(new File("logs", "latest.log"));
+            DizzyEngine.addShutdownHook(Logger::cleanup);
         }catch(FileNotFoundException ex){
             error("Failed to initialize log file!", ex);
         }
@@ -47,8 +49,8 @@ public class Logger{
     public static void reset(){
         getSourceStack().clear();
     }
-    public static void log(MessageType type, String message, Throwable t){//TODO log to a file
-        PrintStream out = type==MessageType.ERROR?System.err:System.out;
+    public static void log(MessageType type, String message, Throwable t){
+        PrintStream out = System.out;
         var stack = getSourceStack();
         String source = stack.isEmpty()?null:stack.peek();
         String err = message!=null?message:"";
