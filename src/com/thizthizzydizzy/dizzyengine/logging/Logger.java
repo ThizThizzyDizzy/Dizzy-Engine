@@ -11,7 +11,9 @@ public class Logger{
     private static PrintStream logStream;
     private static PrintStream crashStream;
     private static Thread crashThread;
+    public static boolean enableDebugLogging = false;
     public static void init(){
+        enableDebugLogging = System.getProperty("dizzyengine.debug")!=null;
         try{
             new File("logs").mkdir();
             logStream = new PrintStream(new File("logs", "latest.log"));
@@ -50,6 +52,7 @@ public class Logger{
         getSourceStack().clear();
     }
     public static void log(MessageType type, String message, Throwable t){
+        if(!enableDebugLogging&&type==MessageType.DEBUG)return;
         PrintStream out = System.out;
         var stack = getSourceStack();
         String source = stack.isEmpty()?null:stack.peek();
@@ -65,6 +68,12 @@ public class Logger{
         out.println(line);
         if(logStream!=null)logStream.println(line);
         if(crashStream!=null&&crashThread==Thread.currentThread())crashStream.println(line);
+    }
+    public static void debug(String message, Throwable t){
+        log(MessageType.DEBUG, message, t);
+    }
+    public static void debug(String message){
+        debug(message, null);
     }
     public static void info(String message, Throwable t){
         log(MessageType.INFO, message, t);
@@ -97,6 +106,7 @@ public class Logger{
         }
     }
     public static enum MessageType{
+        DEBUG,
         INFO,
         WARN,
         ERROR;

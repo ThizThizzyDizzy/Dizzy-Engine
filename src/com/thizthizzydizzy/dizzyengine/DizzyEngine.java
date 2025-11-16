@@ -6,8 +6,12 @@ import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import com.thizthizzydizzy.dizzyengine.terminal.DizzyEngineTerminal;
 import com.thizthizzydizzy.dizzyengine.ui.UILayer;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -43,6 +47,7 @@ public class DizzyEngine{
 
     public static boolean headless = false;
     private static final ArrayList<Runnable> shutdownHooks = new ArrayList<>();
+    private static DizzyEngineTerminal terminal;
     public static void onInitGLFW(Runnable func){
         initFuncsGLFW.add(func);
     }
@@ -75,6 +80,20 @@ public class DizzyEngine{
             Logger.error("Uncaught Exception in Thread "+thread.getName()+":", ex);
         });
         Logger.push("INIT");
+        Logger.info("Starting terminal");
+        terminal = new DizzyEngineTerminal();
+        Thread terminalThread = new Thread(() -> {
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))){
+                while(true){
+                    String line = reader.readLine();
+                    terminal.run(System.out::println, line);
+                }
+            }catch(IOException ex){
+                Logger.error("Error reading System.in!", ex);
+            }
+        }, "DizzyEngine Terminal");
+        terminalThread.setDaemon(true);
+        terminalThread.start();
         if(headless){
             Logger.info("Running headless - skipping window initialization");
         }else{
@@ -354,5 +373,8 @@ public class DizzyEngine{
             hook.run();
             it.remove(); // Make sure they can only ever be run once
         }
+    }
+    public static DizzyEngineTerminal getTerminal(){
+        return terminal;
     }
 }
