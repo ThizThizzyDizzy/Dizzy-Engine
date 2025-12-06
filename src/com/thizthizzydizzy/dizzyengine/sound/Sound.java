@@ -16,7 +16,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.AL11;
 public class Sound{
     private Supplier<InputStream> soundSupplier;
     private ArrayList<SoundBuffer> buffers;
@@ -157,6 +156,10 @@ public class Sound{
             @Override
             public float getFrameRate(){
                 return format.getFrameRate();
+            }
+            @Override
+            public int getDurationInFrames(){
+                return (int)in.getFrameLength();
             }
         };
     }

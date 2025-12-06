@@ -132,4 +132,7 @@ public class SoundSource{
     public float getPlayhead(){
         return currentSound==null?-1:consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/currentSound.getFrameRate();
     }
+    public float getDuration(){
+        return currentSound==null?-1:currentSound.getDurationInFrames()/currentSound.getFrameRate();
+    }
 }

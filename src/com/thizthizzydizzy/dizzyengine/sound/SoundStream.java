@@ -5,4 +5,5 @@ public interface SoundStream{
     public SoundBuffer next();
     public void close();
     public float getFrameRate();
+    public int getDurationInFrames();
 }
