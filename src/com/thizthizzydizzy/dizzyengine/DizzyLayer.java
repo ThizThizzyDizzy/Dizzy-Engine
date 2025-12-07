@@ -1,6 +1,9 @@
 package com.thizthizzydizzy.dizzyengine;
 import org.joml.Vector2i;
 public abstract class DizzyLayer{
+    public static final int Z_INDEX_OFFSET_UI = 10_000;
+    public static final int Z_INDEX_OFFSET_DEBUG = 2_000_000_000;
+    public int zIndex = 0;
     public abstract void init();
     public abstract void render(double deltaTime);
     public abstract void cleanup();

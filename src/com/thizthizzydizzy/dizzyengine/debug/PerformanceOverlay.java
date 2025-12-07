@@ -9,6 +9,9 @@ import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
 import static org.lwjgl.opengl.GL11.glDisable;
 public class PerformanceOverlay extends DizzyLayer{
+    {
+        zIndex = Z_INDEX_OFFSET_DEBUG; // NOTHING should ever render over the debug performance overlay.
+    }
     private static PerformanceOverlay layer;
     private final Matrix4f viewMatrix = new Matrix4f().setTranslation(0, 0, -4);
     private final Matrix4f projectionMatrix = new Matrix4f().ortho(0, 100, 100, 0, 10, -10);

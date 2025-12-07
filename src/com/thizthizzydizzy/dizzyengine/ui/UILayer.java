@@ -9,11 +9,13 @@ import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLabel;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentLayer;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.TextLabelLayer;
-import com.thizthizzydizzy.dizzyengine.ui.component.layer.TexturedLinearHandle;
 import java.util.HashMap;
 import java.util.function.Supplier;
 import org.joml.Vector2f;
 public abstract class UILayer extends DizzyLayer{
+    {
+        zIndex = Z_INDEX_OFFSET_UI;
+    }
     public Menu menu;
     public final Vector2f size = new Vector2f();
     private HashMap<Class<? extends Component>, Supplier<ComponentLayer>> defaultComponentBackgrounds = new HashMap<>();

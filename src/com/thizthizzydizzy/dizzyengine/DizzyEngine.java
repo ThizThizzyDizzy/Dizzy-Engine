@@ -68,7 +68,7 @@ public class DizzyEngine{
                 Logger.error(title);
                 Logger.error("Layers:");
                 for(var layer : layers)
-                    Logger.error("- "+layer.getClass().getName());
+                    Logger.error("- "+layer.zIndex+": "+layer.getClass().getName());
                 Logger.error("Logger Stack:");
                 var stack = Logger.getSourceStack();
                 for(int i = 0; i<stack.size()-1; i++)
@@ -231,6 +231,9 @@ public class DizzyEngine{
         synchronized(layers){
             layers.add(layer);
             if(layer instanceof UILayer ui)currentUIContext = ui;//required for opening default menus during initialization
+            layers.sort((o1, o2) -> {
+                return o1.zIndex-o2.zIndex;
+            });
         }
         return layer;
     }

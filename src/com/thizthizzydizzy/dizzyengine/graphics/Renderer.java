@@ -73,6 +73,7 @@ public class Renderer{
     }
     static{
         elements.put("rect", createRectangleElement(0, 0, 1, 1));
+        elements.put("rect-xz", createXZRectangleElement(0, 0, 1, 1));
         elements.put("cube", new Element(){
             public int vao, vbo, ebo;
             @Override
@@ -184,6 +185,63 @@ public class Renderer{
                     0, 1, 0, 0, 0, 1, left, top,//bottom left
                     1, 0, 0, 0, 0, 1, right, bottom,//top right
                     1, 1, 0, 0, 0, 1, right, top//bottom right
+                };
+                int[] indicies = new int[]{
+                    1, 0, 2,
+                    3, 1, 2
+                };
+
+                glBindVertexArray(vao);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+                //pos
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+                //norm
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+                //tex
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+                glBindVertexArray(0);
+            }
+            @Override
+            public void draw(){
+                glBindVertexArray(vao);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                PerformanceTracker.drawCalls++;
+                glBindVertexArray(0);
+            }
+            @Override
+            public void cleanup(){
+                glDeleteBuffers(ebo);
+                glDeleteBuffers(vbo);
+                glDeleteVertexArrays(vao);
+            }
+        };
+    }
+    private static Element createXZRectangleElement(float left, float top, float right, float bottom){
+        return new Element(){
+            public int vao, vbo, ebo;
+            @Override
+            public void init(){
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ebo = glGenBuffers();
+
+                float[] verticies = new float[]{
+                    0, 0, 0, 0, 1, 0, left, bottom,//top left
+                    0, 0, 1, 0, 1, 0, left, top,//bottom left
+                    1, 0, 0, 0, 1, 0, right, bottom,//top right
+                    1, 0, 1, 0, 1, 0, right, top//bottom right
                 };
                 int[] indicies = new int[]{
                     1, 0, 2,
@@ -493,6 +551,44 @@ public class Renderer{
         }
         bindTexture(texture);
         drawElement("rect", left, top, right-left, bottom-top);
+    }
+    public static void fillXYRect(float x1, float y1, float x2, float y2, float z, int texture){
+        if(x2<x1){
+            float r = x1;
+            float l = x2;
+            x2 = r;
+            x1 = l;
+        }
+        if(y2<y1){
+            float b = y1;
+            float t = y2;
+            y2 = b;
+            y1 = t;
+        }
+        bindTexture(texture);
+        
+        model(new Matrix4f().setTranslation(x1, y1, z).scale(x2-x1, y2-y1, 1));
+        drawElement("rect");
+        resetModelMatrix();
+    }
+    public static void fillXZRect(float x1, float z1, float x2, float z2, float y, int texture){
+        if(x2<x1){
+            float r = x1;
+            float l = x2;
+            x2 = r;
+            x1 = l;
+        }
+        if(z2<z1){
+            float b = z1;
+            float t = z2;
+            z2 = b;
+            z1 = t;
+        }
+        bindTexture(texture);
+        
+        model(new Matrix4f().setTranslation(x1, y, z1).scale(x2-x1, 1, z2-z1));
+        drawElement("rect-xz");
+        resetModelMatrix();
     }
     // Much faster than using stencil bounds
     public static void fillRectWithBound(float left, float top, float right, float bottom, int texture, float leftBound, float topBound, float rightBound, float bottomBound){

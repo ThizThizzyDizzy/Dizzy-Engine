@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.terminal;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.debug.NoclipProcessor;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -34,6 +35,21 @@ public class DizzyEngineTerminal extends Terminal{
             protected void run(Consumer<String> output, ArrayList<FlagArguments> commandArguments){
                 Logger.enableDebugLogging = !Logger.enableDebugLogging;
                 output.accept("Debug logging "+(Logger.enableDebugLogging?"enabled":"disabled"));
+            }
+        });
+        registerCommand(new TerminalCommand() {
+            @Override
+            public String getBaseCommand(){
+                return "noclip";
+            }
+            @Override
+            public void registerArguments(){}
+            @Override
+            protected void run(Consumer<String> output, ArrayList<FlagArguments> commandArguments){
+                boolean firstRun = DizzyEngine.getLayer(NoclipProcessor.class)==null;
+                NoclipProcessor.reset();
+                NoclipProcessor.enableInput = firstRun || !NoclipProcessor.enableInput;
+                output.accept("Noclip reset, input "+(NoclipProcessor.enableInput?"Enabled":"Disabled"));
             }
         });
     }
