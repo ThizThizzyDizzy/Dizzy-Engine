@@ -1,6 +1,7 @@
 package com.thizthizzydizzy.dizzyengine.debug;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTrackerGroup;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import org.joml.Matrix4f;
@@ -24,35 +25,56 @@ public class PerformanceOverlay extends DizzyLayer{
     public void init(){
     }
     @Override
+    public void cleanup(){
+    }
+    @Override
+    protected void onKey(int id, int key, int scancode, int action, int mods){
+        if(action!=GLFW.GLFW_PRESS)return;
+        if(key==GLFW.GLFW_KEY_F11){
+            currentPage++;
+            if(currentPage>numPages)currentPage = 0;
+        }
+    }
+    @Override
     public void render(double deltaTime){
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
         Renderer.view(viewMatrix);
         Renderer.projection(new Matrix4f().ortho(0, DizzyEngine.screenSize.x, DizzyEngine.screenSize.y, 0, 10, -10));
-        float lineHeight = 20;
         Renderer.setColor(Color.WHITE);
-        if(currentPage>0)Renderer.drawText(0, 0, "DizzyEngine Performance Overlay - Page "+currentPage+"/"+numPages, lineHeight);
+        lineOffset = 0;
+        if(currentPage>0)text("DizzyEngine Performance Overlay - Page "+currentPage+"/"+numPages);
         switch(currentPage){
             case 1 -> {
-                Renderer.drawText(0, lineHeight, "Draw Calls: "+PerformanceTracker.drawCalls, lineHeight);
-                Renderer.drawText(0, lineHeight*2, "Shader Performance", lineHeight);
-                Renderer.drawText(0, lineHeight*3, "- glUniform1f: "+PerformanceTracker.glUniform1f, lineHeight);
-                Renderer.drawText(0, lineHeight*4, "- glUniform2f: "+PerformanceTracker.glUniform2f, lineHeight);
-                Renderer.drawText(0, lineHeight*5, "- glUniform3f: "+PerformanceTracker.glUniform3f, lineHeight);
-                Renderer.drawText(0, lineHeight*6, "- glUniform4f: "+PerformanceTracker.glUniform4f, lineHeight);
-                Renderer.drawText(0, lineHeight*7, "- glUniform1i: "+PerformanceTracker.glUniform1i, lineHeight);
-                Renderer.drawText(0, lineHeight*8, "- glUniformMatrix4f: "+PerformanceTracker.glUniformMatrix4f, lineHeight);
+                text("=== Performance Tracker: Counters ===");
+                drawPerfTrackerGroup("GLOBAL", PerformanceTracker.rootGroup, 0);
+//                text("Draw Calls: "+PerformanceTracker.drawCalls);
+//                text("Shader Performance");
+//                text("glUniform1f: "+PerformanceTracker.glUniform1f);
+//                text("glUniform2f: "+PerformanceTracker.glUniform2f);
+//                text("glUniform3f: "+PerformanceTracker.glUniform3f);
+//                text("glUniform4f: "+PerformanceTracker.glUniform4f);
+//                text("glUniform1i: "+PerformanceTracker.glUniform1i);
+//                text("glUniformMatrix4f: "+PerformanceTracker.glUniformMatrix4f);
             }
         }
     }
-    @Override
-    public void cleanup(){
+    private float lineHeight = 20;
+    private int lineOffset = 0;
+    private void text(String str){
+        Renderer.drawText(0, lineHeight*lineOffset, str, lineHeight);
+        lineOffset++;
     }
-    @Override
-    protected void onKey(int id, int key, int scancode, int action, int mods){
-        if(action==GLFW.GLFW_PRESS&&key==GLFW.GLFW_KEY_F11){
-            currentPage++;
-            if(currentPage>numPages)currentPage = 0;
+    private void drawPerfTrackerGroup(String name, PerformanceTrackerGroup group, int depth){
+        String prefix = "";
+        for(int i = 0; i<depth; i++)prefix+=" | ";
+        text(prefix+"-- "+name+" --");
+        prefix+=" | ";
+        for(var counter : group.counters.entrySet().stream().sorted((e1,e2)->e1.getValue()-e2.getValue()).toList()){
+            text(prefix+counter.getKey()+": "+counter.getValue());
+        }
+        for(var subgroup : group.subgroups.entrySet().stream().sorted((e1,e2)->e1.getKey().compareTo(e2.getKey())).toList()){
+            drawPerfTrackerGroup(subgroup.getKey(), subgroup.getValue(), depth+1);
         }
     }
 }

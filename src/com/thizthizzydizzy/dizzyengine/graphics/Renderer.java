@@ -160,7 +160,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override
@@ -217,7 +217,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override
@@ -274,7 +274,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override
@@ -345,7 +345,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, sides*3, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override
@@ -433,7 +433,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, sides*6, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override
@@ -508,7 +508,7 @@ public class Renderer{
             public void draw(){
                 glBindVertexArray(vao);
                 glDrawElements(GL_TRIANGLES, teeth*resolution*6, GL_UNSIGNED_INT, 0);
-                PerformanceTracker.drawCalls++;
+                PerformanceTracker.incrementCounter("glDrawElements");
                 glBindVertexArray(0);
             }
             @Override

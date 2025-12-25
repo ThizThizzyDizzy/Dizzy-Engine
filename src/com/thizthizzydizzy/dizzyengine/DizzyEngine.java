@@ -311,7 +311,9 @@ public class DizzyEngine{
                     wrapEvent(layers, (layer) -> {
                         screenBuffer.bind();//just in case it was changed
                         Renderer.reset();
+                        PerformanceTracker.push(layer);
                         layer.render(deltaTime);
+                        PerformanceTracker.pop();
                     });
                     Renderer.reset();
                     glBindFramebuffer(GL_FRAMEBUFFER, 0);

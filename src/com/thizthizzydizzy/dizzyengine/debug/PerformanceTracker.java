@@ -1,21 +1,29 @@
 package com.thizthizzydizzy.dizzyengine.debug;
-public class PerformanceTracker{//TODO track everything per layer
-    public static int drawCalls = 0;
-
-    // Shader Performance
-    public static int glUniform1f;
-    public static int glUniform2f;
-    public static int glUniform3f;
-    public static int glUniform4f;
-    public static int glUniform1i;
-    public static int glUniformMatrix4f;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTrackerGroup;
+import com.thizthizzydizzy.dizzyengine.logging.Logger;
+public class PerformanceTracker{
+    public static final PerformanceTrackerGroup rootGroup = new PerformanceTrackerGroup(null);
+    private static PerformanceTrackerGroup currentGroup = rootGroup;
+    
     public static void reset(){
-        drawCalls = 0;
-        glUniform1f = 0;
-        glUniform2f = 0;
-        glUniform3f = 0;
-        glUniform4f = 0;
-        glUniform1i = 0;
-        glUniformMatrix4f = 0;
+        currentGroup = rootGroup;
+        rootGroup.reset();
+    }
+    public static void push(Object source){
+        push(source.getClass());
+    }
+    public static void push(Class source){
+        push(source.getSimpleName());
+    }
+    public static void push(String source){
+        currentGroup = currentGroup.subgroup(source);
+    }
+    public static void pop(){
+        if(currentGroup.parent==null)Logger.warn("Tried to pop empty performance tracker stack!", new RuntimeException());
+        else
+            currentGroup = currentGroup.parent;
+    }
+    public static void incrementCounter(String counter){
+        currentGroup.addCounter(counter, 1);
     }
 }
