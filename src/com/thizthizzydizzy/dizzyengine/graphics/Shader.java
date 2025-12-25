@@ -1,6 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
-import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

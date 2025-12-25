@@ -1,7 +1,7 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
-import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.io.File;

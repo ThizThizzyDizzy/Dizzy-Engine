@@ -1,7 +1,7 @@
 package com.thizthizzydizzy.dizzyengine;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.thizthizzydizzy.dizzyengine.debug.PerformanceTracker;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;

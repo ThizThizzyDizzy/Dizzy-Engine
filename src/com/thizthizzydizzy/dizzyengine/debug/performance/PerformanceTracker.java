@@ -1,4 +1,4 @@
-package com.thizthizzydizzy.dizzyengine.debug;
+package com.thizthizzydizzy.dizzyengine.debug.performance;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTrackerGroup;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 public class PerformanceTracker{
