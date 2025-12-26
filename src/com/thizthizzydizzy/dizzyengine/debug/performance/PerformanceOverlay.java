@@ -1,7 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.debug.performance;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
-import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTrackerGroup;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import org.joml.Matrix4f;
@@ -48,14 +47,6 @@ public class PerformanceOverlay extends DizzyLayer{
             case 1 -> {
                 text("=== Performance Tracker: Counters ===");
                 drawPerfTrackerGroup("GLOBAL", PerformanceTracker.rootGroup, 0);
-//                text("Draw Calls: "+PerformanceTracker.drawCalls);
-//                text("Shader Performance");
-//                text("glUniform1f: "+PerformanceTracker.glUniform1f);
-//                text("glUniform2f: "+PerformanceTracker.glUniform2f);
-//                text("glUniform3f: "+PerformanceTracker.glUniform3f);
-//                text("glUniform4f: "+PerformanceTracker.glUniform4f);
-//                text("glUniform1i: "+PerformanceTracker.glUniform1i);
-//                text("glUniformMatrix4f: "+PerformanceTracker.glUniformMatrix4f);
             }
         }
     }

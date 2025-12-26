@@ -1,5 +1,4 @@
 package com.thizthizzydizzy.dizzyengine.debug.performance;
-import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTrackerGroup;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 public class PerformanceTracker{
     public static final PerformanceTrackerGroup rootGroup = new PerformanceTrackerGroup(null);
@@ -11,6 +10,9 @@ public class PerformanceTracker{
     }
     public static void push(Object source){
         push(source.getClass());
+    }
+    public static void push(Enum source){
+        push(source.name());
     }
     public static void push(Class source){
         push(source.getSimpleName());

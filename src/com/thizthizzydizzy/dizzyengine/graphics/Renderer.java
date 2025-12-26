@@ -3,6 +3,8 @@ import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
+import com.thizthizzydizzy.dizzyengine.graphics.text.Font;
+import com.thizthizzydizzy.dizzyengine.graphics.text.FontCharacter;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.io.File;
 import java.io.FileInputStream;
@@ -857,6 +859,13 @@ public class Renderer{
         Renderer.shader = shader;
         shader.use();
     }
+    public static void resetShaderInstanced(){
+        setShaderInstanced(defaultShader);
+    }
+    public static void setShaderInstanced(Shader shader){
+        Renderer.shader = shader.instanced;
+        shader.useInstanced();
+    }
     private static Matrix4f createModelMatrix(float x, float y, float scaleX, float scaleY){
         return new Matrix4f().setTranslation(x, y, 0).scaleXY(scaleX, scaleY);
     }
@@ -882,11 +891,21 @@ public class Renderer{
     public static void resetModelMatrix(){
         model(new Matrix4f());
     }
+    private static Matrix4f lastView = new Matrix4f();
     public static void view(Matrix4f matrix){
+        lastView.set(matrix);
         shader.setUniformMatrix4fv("view", matrix);
     }
+    public static void restoreView(){
+        view(lastView);
+    }
+    private static Matrix4f lastProjection = new Matrix4f();
     public static void projection(Matrix4f matrix){
+        lastProjection.set(matrix);
         shader.setUniformMatrix4fv("projection", matrix);
+    }
+    public static void restoreProjection(){
+        projection(lastProjection);
     }
     private static int boundTexture = -1;
     public static void unbindTexture(){

@@ -1,4 +1,4 @@
-package com.thizthizzydizzy.dizzyengine.graphics;
+package com.thizthizzydizzy.dizzyengine.graphics.text;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import java.nio.ByteBuffer;

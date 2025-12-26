@@ -1,4 +1,4 @@
-package com.thizthizzydizzy.dizzyengine.graphics;
+package com.thizthizzydizzy.dizzyengine.graphics.text;
 import static org.lwjgl.opengl.GL30.*;
 import org.lwjgl.stb.STBTTAlignedQuad;
 import static org.lwjgl.stb.STBTruetype.*;

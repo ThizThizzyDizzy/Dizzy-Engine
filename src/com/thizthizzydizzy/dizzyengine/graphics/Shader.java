@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
+import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import java.io.BufferedReader;
@@ -9,15 +10,21 @@ import org.joml.Vector2fc;
 import org.joml.Vector3fc;
 import org.joml.Vector4fc;
 import static org.lwjgl.opengl.GL20.*;
-public class Shader{
+public class Shader implements AutoCloseable{
     private int vertexShader;
     private int fragmentShader;
     private int program;
     public static Shader loadInternal(String vertexShaderPath, String fragmentShaderPath){
         return new Shader(loadFile("/shaders/"+vertexShaderPath), loadFile("/shaders/"+fragmentShaderPath));
     }
-    public Shader(String vertexShader, String fragmentShader){
+    private final String[] compilerDefinitions;
+    final Shader instanced;
+    public Shader(String vertexShader, String fragmentShader, String... compilerDefinitions){
+        this.compilerDefinitions = compilerDefinitions;
         createShaderProgram(vertexShader, fragmentShader);
+        if(compilerDefinitions.length==0)instanced = new Shader(vertexShader, fragmentShader, "INSTANCED");
+        else instanced = null;
+        DizzyEngine.addShutdownHook(this);
     }
     private static int compileShader(int shaderType, String src){
         int shader = glCreateShader(shaderType);
@@ -49,6 +56,9 @@ public class Shader{
         return program;
     }
     private void createShaderProgram(String vertex, String fragment){
+        vertex = injectCompilerDefinitions(vertex);
+        fragment = injectCompilerDefinitions(fragment);
+
         vertexShader = compileShader(GL_VERTEX_SHADER, vertex);
         fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragment);
         program = createShaderProgram(vertexShader, fragmentShader);
@@ -103,9 +113,21 @@ public class Shader{
     public void use(){
         glUseProgram(program);
     }
-    public void cleanup(){
+    public void useInstanced(){
+        instanced.use();
+    }
+    @Override
+    public void close() throws Exception{
         glDeleteProgram(program);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+        if(instanced!=null)instanced.close();
+    }
+    private String injectCompilerDefinitions(String str){
+        if(compilerDefinitions.length==0)return str;
+        int versionIndex = str.indexOf("\n")+1;
+        return str.substring(0, versionIndex)
+            +"#define "+String.join("\n#define ", compilerDefinitions)+"\n"
+            +str.substring(versionIndex);
     }
 }

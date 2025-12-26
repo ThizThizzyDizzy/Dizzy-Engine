@@ -13,12 +13,8 @@ public abstract class ThreeQuarterWorldLayer extends FlatWorldLayer{
     @Override
     public void renderWorld(Vector3i chunk, double deltaTime){
         renderWorldBackground(chunk, deltaTime);
-        // sorting is not neccesary if rendering 3D-style
-//        objects.sort((o1, o2) -> {
-//            float diff = o1.position.y-o2.position.y;
-//            if(Math.abs(diff)>0.001f)return 0;
-//            return diff>0?1:-1;
-//        });
+
+        drawObjects();
     }
     public abstract void renderWorldBackground(Vector3i chunk, double deltaTime);
     public float getShearFactor(){
