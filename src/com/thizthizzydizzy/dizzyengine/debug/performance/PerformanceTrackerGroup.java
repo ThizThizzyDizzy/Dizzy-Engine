@@ -11,6 +11,7 @@ public class PerformanceTrackerGroup{
     public void reset(){
         counters.clear();
         subgroups.values().forEach(PerformanceTrackerGroup::reset);
+        subgroups.clear();
     }
     public PerformanceTrackerGroup subgroup(String source){
         var subgroup = subgroups.get(source);

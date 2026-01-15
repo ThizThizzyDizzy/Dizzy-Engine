@@ -30,8 +30,13 @@ public class PerformanceOverlay extends DizzyLayer{
     protected void onKey(int id, int key, int scancode, int action, int mods){
         if(action!=GLFW.GLFW_PRESS)return;
         if(key==GLFW.GLFW_KEY_F11){
+            scroll = 0;
             currentPage++;
             if(currentPage>numPages)currentPage = 0;
+        }
+        if(currentPage==1){
+            if(key==GLFW.GLFW_KEY_PAGE_DOWN)scroll+=8;
+            if(key==GLFW.GLFW_KEY_PAGE_UP)scroll = Math.max(0, scroll-8);
         }
     }
     @Override
@@ -41,7 +46,7 @@ public class PerformanceOverlay extends DizzyLayer{
         Renderer.view(viewMatrix);
         Renderer.projection(new Matrix4f().ortho(0, DizzyEngine.screenSize.x, DizzyEngine.screenSize.y, 0, 10, -10));
         Renderer.setColor(Color.WHITE);
-        lineOffset = 0;
+        lineOffset = -scroll;
         if(currentPage>0)text("DizzyEngine Performance Overlay - Page "+currentPage+"/"+numPages);
         switch(currentPage){
             case 1 -> {
@@ -52,6 +57,7 @@ public class PerformanceOverlay extends DizzyLayer{
     }
     private float lineHeight = 20;
     private int lineOffset = 0;
+    private int scroll = 0;
     private void text(String str){
         Renderer.drawText(0, lineHeight*lineOffset, str, lineHeight);
         lineOffset++;

@@ -35,10 +35,13 @@ public class ResourceManager{
             throw new RuntimeException(ex);//TODO handle error properly!
         }
     }
-    private static HashMap<String, Integer> texturesCache = new HashMap<>();
-    private static Image missingTexture = new Image(1, 1);
+    private static final HashMap<String, Integer> texturesCache = new HashMap<>();
+    private static final Image missingTexture = new Image(1, 1);
     static{
         missingTexture.setRGB(0, 0, Color.MAGENTA.getRGB());
+    }
+    public static int getMissingTexture(){
+        return getTexture(missingTexture);
     }
     public static int getTexture(String path){
         if(path==null)return getTexture(missingTexture);

@@ -26,8 +26,16 @@ public class ThreeQuarterWorldObject extends SizedWorldObject implements Instanc
     protected Mesh generateMesh(){
         var builder = new AxialQuadMeshBuilder();
         float totalTextureHeight = getSize().y+getSize().z;
-        if(getSize().y>0)builder.quadXY(-getSize().x/2, -getSize().y/2, getSize().x/2, getSize().y/2, getSize().z, true, 0, getSize().z/totalTextureHeight, 1, 1);
-        if(getSize().z>0)builder.quadXZ(-getSize().x/2, 0, getSize().x/2, getSize().z, getSize().y/2, true, 0, 0, 1, getSize().z/totalTextureHeight);
+        if(getSize().y>0)
+            builder.quadXY(-getSize().x/2, -getSize().y/2, getSize().x/2, getSize().y/2, getSize().z, true, 0, getSize().z/totalTextureHeight, 1, 1);
+        if(getSize().z>0)
+            builder.quadXZ(-getSize().x/2, 0, getSize().x/2, getSize().z, getSize().y/2, true, 0, 0, 1, getSize().z/totalTextureHeight);
         return builder.build();
+    }
+    @Override
+    public void preRender(){
+    }
+    @Override
+    public void postRender(){
     }
 }

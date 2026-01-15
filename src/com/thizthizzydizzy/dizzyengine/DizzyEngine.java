@@ -75,9 +75,9 @@ public class DizzyEngine{
                     Logger.error("- "+stack.get(i));
                 Logger.error("===== GAME CRASH =====");
                 Logger.pop();
-                runShutdownHooks();
             }
             Logger.error("Uncaught Exception in Thread "+thread.getName()+":", ex);
+            if(isCrash&&thread==mainThread)runShutdownHooks();
         });
         Logger.push("INIT");
         Logger.info("Starting terminal");

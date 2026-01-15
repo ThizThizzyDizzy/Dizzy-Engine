@@ -94,6 +94,10 @@ public abstract class FlatWorldLayer extends DizzyLayer{
     public abstract void renderWorld(Vector3i chunk, double deltaTime);
 
     protected void drawObjects(){
-        for(var batch : batcher.batch(getObjects()))batch.render();
+        List<WorldObject> toDraw = new ArrayList<>();
+        synchronized(objects){
+            toDraw.addAll(getObjects());
+        }
+        for(var batch : batcher.batch(toDraw))batch.render();
     }
 }

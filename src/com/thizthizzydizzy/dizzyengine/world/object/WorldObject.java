@@ -3,12 +3,14 @@ import com.thizthizzydizzy.dizzyengine.graphics.Material;
 import com.thizthizzydizzy.dizzyengine.graphics.batch.Instanceable;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.Objects;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 public abstract class WorldObject{
     private boolean isDirty = true;
     private final Vector3f position = new Vector3f();
     private Material material;
     private boolean isStatic = false;
+    private boolean dead = false;
 
     public void render(){
         if(this instanceof Instanceable){
@@ -34,6 +36,14 @@ public abstract class WorldObject{
         return isDirty;
     }
 
+    public void remove(){
+        dead = true;
+        markDirty();
+    }
+    public boolean isDead(){
+        return dead;
+    }
+
     public Vector3f getPosition(){
         return position.get(new Vector3f());
     }
@@ -51,5 +61,8 @@ public abstract class WorldObject{
     public void setMaterial(Material material){
         if(!Objects.equals(material, this.material))markDirty();
         this.material = material;
+    }
+    public Matrix4f getModelMatrix(){
+        return new Matrix4f().translate(getPosition());
     }
 }

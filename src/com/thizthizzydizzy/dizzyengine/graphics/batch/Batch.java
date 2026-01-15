@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics.batch;
+import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Material;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
@@ -9,7 +10,6 @@ import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import org.joml.Matrix4f;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -42,7 +42,7 @@ public class Batch implements AutoCloseable{
     }
     public void render(){
         if(!initialized)init();
-        if(material.shader==null){
+        if(material==null||material.shader==null){
             if(type==BatchType.INDIVIDUAL)Renderer.resetShader();
             else Renderer.resetShaderInstanced();
         }
@@ -55,11 +55,14 @@ public class Batch implements AutoCloseable{
         Renderer.restoreProjection();
         Renderer.restoreView();
         
-        Renderer.bindTexture(material.texture);
+        var sampleObject = (Instanceable)objects.getFirst();
+        Renderer.bindTexture(material==null?ResourceManager.getMissingTexture():material.texture);
         Renderer.setColor(Color.WHITE);
+        sampleObject.preRender();
         PerformanceTracker.push(type);
         type.render(this);
         PerformanceTracker.pop();
+        sampleObject.postRender();
         Renderer.resetShader();
     }
 
@@ -133,7 +136,7 @@ public class Batch implements AutoCloseable{
     void writeModelMatricies(){
         modelMatrixBuffer.clear();
         for(var object : objects){
-            new Matrix4f().translate(object.getPosition()).get(modelMatrixBuffer);
+            object.getModelMatrix().get(modelMatrixBuffer);
             modelMatrixBuffer.position(modelMatrixBuffer.position()+16); // increment it >.>
         }
         modelMatrixBuffer.flip();

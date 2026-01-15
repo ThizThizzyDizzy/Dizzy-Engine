@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.ui.component;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.util.ArrayList;
@@ -36,7 +37,11 @@ public class Component{
 //        Renderer.bound(x, y, x+size.x, y+size.y); //TODO fix bound- this doesn't work with BorderLayout for some reason
         draw(deltaTime);
         Renderer.translate(x, y);
-        for(var c : components)c.render(deltaTime);
+        for(var c : components){
+            PerformanceTracker.push(c);
+            c.render(deltaTime);
+            PerformanceTracker.pop();
+        }
         Renderer.unTranslate();
 //        Renderer.unBound();
     }

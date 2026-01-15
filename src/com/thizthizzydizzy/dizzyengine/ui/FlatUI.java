@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.ui;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
@@ -19,7 +20,9 @@ public class FlatUI extends UILayer{
         glDisable(GL_DEPTH_TEST);
         Renderer.view(viewMatrix);
         Renderer.projection(projectionMatrix);
+        PerformanceTracker.push(menu);
         menu.render(deltaTime);
+        PerformanceTracker.pop();
     }
     @Override
     public void cleanup(){

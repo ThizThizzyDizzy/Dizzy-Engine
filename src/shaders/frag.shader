@@ -7,6 +7,5 @@ uniform vec4 color;
 uniform vec4 noTex;
 void main(){
     vec4 texel = texture(tex, texCoord);
-    if(texel.a<0.1)discard;
     FragColor = (texel+noTex)*color;
 }

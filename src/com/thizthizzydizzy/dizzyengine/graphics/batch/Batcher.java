@@ -51,6 +51,7 @@ public class Batcher implements AutoCloseable{
 
         // Create batches for all objects
         for(var object : objects){
+            if(object.isDead())continue;
             if(object.isStatic()){
                 Batch existingBatch = null;
                 for(var batch : staticBatches){
