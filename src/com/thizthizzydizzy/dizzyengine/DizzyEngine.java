@@ -324,9 +324,11 @@ public class DizzyEngine{
 
                     glDisable(GL_CULL_FACE);
                     glDisable(GL_DEPTH_TEST);
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     Renderer.view(windowViewMatrix);
                     Renderer.projection(windowProjectionMatrix);
                     Renderer.fillRect(0, 0, screenSize.x, screenSize.y, screenBuffer.texture);//draw screen buffer to renderbuffer
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glfwSwapBuffers(window);
                     glfwPollEvents();
                 }
