@@ -68,8 +68,11 @@ public class Batch implements AutoCloseable{
 
     int vao, vbo, ebo;
     int ssbo;
+    int extraDataSSBO;
     int tris;
+    int dataSize;
     FloatBuffer modelMatrixBuffer;
+    FloatBuffer extraDataBuffer;
     private void init(){
         initialized = true;
         if(type==BatchType.INDIVIDUAL)return;
@@ -81,7 +84,8 @@ public class Batch implements AutoCloseable{
         ebo = glGenBuffers();
         ssbo = glGenBuffers();
         
-        var mesh = ((Instanceable)objects.getFirst()).getMesh();
+        var first = (Instanceable)objects.getFirst();
+        var mesh = first.getMesh();
         float[] verticies = new float[mesh.verticies.size()*Vertex.SIZE];
         for(int v = 0; v<mesh.verticies.size(); v++){
             var vertex = mesh.verticies.get(v);
@@ -123,15 +127,29 @@ public class Batch implements AutoCloseable{
         glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*64, type.glDrawHint);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+        float[] sampleData = first.getInstanceData();
+        dataSize = sampleData==null?0:sampleData.length;
+        
+        if(dataSize>0){
+            extraDataSSBO = glGenBuffers();
+            extraDataBuffer = MemoryUtil.memAllocFloat(objects.size()*dataSize);
+            
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, extraDataSSBO);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*dataSize*4, type.glDrawHint);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        }
+
         if(type==BatchType.STATIC_INSTANCED)writeModelMatricies();
     }
     @Override
     public void close() throws Exception{
         if(!initialized)return;
         MemoryUtil.memFree(modelMatrixBuffer);
+        if(extraDataBuffer!=null)MemoryUtil.memFree(extraDataBuffer);
         glDeleteBuffers(ebo);
         glDeleteBuffers(vbo);
         glDeleteVertexArrays(vao);
+        if(extraDataSSBO!=0)glDeleteBuffers(extraDataSSBO);
     }
     void writeModelMatricies(){
         modelMatrixBuffer.clear();
@@ -146,9 +164,24 @@ public class Batch implements AutoCloseable{
         glBindBuffer(GL_ARRAY_BUFFER, ssbo);
         glBufferData(GL_ARRAY_BUFFER, (long)objects.size()*64, type.glDrawHint);
         glBufferSubData(GL_ARRAY_BUFFER, 0, modelMatrixBuffer);
+
+        if(extraDataSSBO!=0)writeExtraData();
+    }
+    void writeExtraData(){
+        extraDataBuffer.clear();
+        for(var object : objects){
+            float[] data = ((Instanceable)object).getInstanceData();
+            if(data!=null)extraDataBuffer.put(data);
+        }
+        extraDataBuffer.flip();
+        
+        glBindBuffer(GL_ARRAY_BUFFER, extraDataSSBO);
+        glBufferData(GL_ARRAY_BUFFER, (long)objects.size()*dataSize*4, type.glDrawHint);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, extraDataBuffer);
     }
     void drawInstanced(){
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+        if(extraDataSSBO!=0)glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, extraDataSSBO);
         glBindVertexArray(vao);
         glDrawElementsInstanced(GL_TRIANGLES, tris*Triangle.SIZE, GL_UNSIGNED_INT, 0, objects.size());
         PerformanceTracker.incrementCounter("glDrawElementsInstanced ("+objects.getFirst().getClass().getSimpleName()+" x"+objects.size()+")");

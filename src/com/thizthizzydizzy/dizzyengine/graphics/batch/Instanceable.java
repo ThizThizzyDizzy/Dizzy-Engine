@@ -6,4 +6,7 @@ public interface Instanceable{
     public Mesh getMesh();
     public void preRender();
     public void postRender();
+    public default float[] getInstanceData(){
+        return null;
+    }
 }
