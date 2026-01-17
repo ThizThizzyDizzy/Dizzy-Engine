@@ -55,11 +55,25 @@ public abstract class FlatWorldLayer extends DizzyLayer{
     }
 
     public <T extends WorldObject> void addObject(T object){
-        objects.add(object);
-        for(var indexKey : indicies.keySet()){
-            if(indexKey.isAssignableFrom(object.getClass())){
-                List list = indicies.get(indexKey);
-                list.add(object);
+        synchronized(objects){
+            objects.add(object);
+            for(var indexKey : indicies.keySet()){
+                if(indexKey.isAssignableFrom(object.getClass())){
+                    List list = indicies.get(indexKey);
+                    list.add(object);
+                }
+            }
+        }
+    }
+
+    public <T extends WorldObject> void removeObject(T object){
+        synchronized(objects){
+            objects.remove(object);
+            for(var indexKey : indicies.keySet()){
+                if(indexKey.isAssignableFrom(object.getClass())){
+                    List list = indicies.get(indexKey);
+                    list.remove(object);
+                }
             }
         }
     }
@@ -75,16 +89,18 @@ public abstract class FlatWorldLayer extends DizzyLayer{
         float yOff = -(screenSnap.y+1)/2;
         return new Matrix4f().setOrtho(DizzyEngine.screenSize.x*xOff, DizzyEngine.screenSize.x*(xOff+1), DizzyEngine.screenSize.y*(yOff+1), DizzyEngine.screenSize.y*yOff, -10000f, 10000f);
     }
+    public Matrix4f createViewMatrix(){
+        var view = new Matrix4f();
+        view.scale(zoom, zoom, zoom);
+        view.translate(panX, panY, 0);
+        return view;
+    }
     @Override
     public void render(double deltaTime){
 //        glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        var projection = createProjectionMatrix();
-        Renderer.projection(projection);
-        var view = new Matrix4f();
-        view.scale(zoom, zoom, zoom);
-        view.translate(panX, panY, 0);
-        Renderer.view(view);
+        Renderer.projection(createProjectionMatrix());
+        Renderer.view(createViewMatrix());
         Renderer.setModel(new Matrix4f());
         if(chunkSize==null){
             renderWorld(null, deltaTime);

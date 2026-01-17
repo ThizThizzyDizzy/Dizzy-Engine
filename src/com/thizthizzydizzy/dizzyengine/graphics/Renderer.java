@@ -29,6 +29,10 @@ public class Renderer{
     private static Matrix4fStack modelMatStack = new Matrix4fStack(64);
     private static final HashMap<String, Element> elements = new HashMap<>();
     public static float preferredTextScale = 24;
+    private static final ArrayList<Function<Matrix4f, Matrix4f>> viewPreprocessors = new ArrayList<>();
+    public static void addViewMatrixPreprocessor(Function<Matrix4f, Matrix4f> preprocessor){
+        viewPreprocessors.add(preprocessor);
+    }
     private static final String[] fallbackFontPaths = new String[]{
         "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/liberation-fonts/LiberationSans-Regular.ttf",
@@ -637,6 +641,29 @@ public class Renderer{
         }
         drawElement(element, left, top, right-left, bottom-top);
     }
+    public static void fillRectXZ(float left, float top, float right, float bottom, float y, int texture, float texLeft, float texTop, float texRight, float texBottom){
+        if(right<left){
+            float r = left;
+            float l = right;
+            right = r;
+            left = l;
+        }
+        if(bottom<top){
+            float b = top;
+            float t = bottom;
+            bottom = b;
+            top = t;
+        }
+        bindTexture(texture);
+        String key = "DizzyEngine:RectangleXZ_"+texLeft+"_"+texTop+"_"+texRight+"_"+texBottom;
+        var element = elements.get(key);
+        if(element==null){
+            element = createXZRectangleElement(texLeft, texTop, texRight, texBottom);
+            elements.put(key, element);
+            element.init();
+        }
+        drawElement(element, left, y, top, right-left, y, bottom-top);
+    }
     public static void fillRegularPolygon(float x, float y, int sides, float radius){
         fillRegularPolygon(x, y, sides, radius, radius);
     }
@@ -893,11 +920,20 @@ public class Renderer{
     }
     private static Matrix4f lastView = new Matrix4f();
     public static void view(Matrix4f matrix){
+        setExactView(applyViewMatrixPreProcessors(new Matrix4f(matrix)));
+    }
+    public static Matrix4f applyViewMatrixPreProcessors(Matrix4f matrix){
+        for(var preprocessor : viewPreprocessors){
+            matrix = preprocessor.apply(matrix);
+        }
+        return matrix;
+    }
+    public static void setExactView(Matrix4f matrix){
         lastView.set(matrix);
         shader.setUniformMatrix4fv("view", matrix);
     }
     public static void restoreView(){
-        view(lastView);
+        setExactView(lastView);
     }
     private static Matrix4f lastProjection = new Matrix4f();
     public static void projection(Matrix4f matrix){

@@ -82,7 +82,7 @@ public class VRLayer extends DizzyLayer{
         glClearColor(0f, 0f, 0f, 1f);//background for color buffer
         glClear(GL_COLOR_BUFFER_BIT);//clear color buffer
         Renderer.projection(projectionMatrices[0]);
-        Renderer.view(eyeMatrices[0]);
+        Renderer.setExactView(eyeMatrices[0]);
         //TODO VR render!
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Renderer.setColor(1f, 1f, 1f, 1f);
@@ -101,7 +101,7 @@ public class VRLayer extends DizzyLayer{
         glClearColor(0f, 0f, 0f, 1f);//background for color buffer
         glClear(GL_COLOR_BUFFER_BIT);//clear color buffer
         Renderer.projection(projectionMatrices[1]);
-        Renderer.view(eyeMatrices[1]);
+        Renderer.setExactView(eyeMatrices[1]);
         //TODO VR render!
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         Renderer.setColor(1f, 1f, 1f, 1f);

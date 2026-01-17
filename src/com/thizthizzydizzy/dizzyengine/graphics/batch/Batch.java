@@ -44,25 +44,28 @@ public class Batch implements AutoCloseable{
         if(!initialized)init();
         if(material==null||material.shader==null){
             if(type==BatchType.INDIVIDUAL)Renderer.resetShader();
-            else Renderer.resetShaderInstanced();
-        }
-        else{
+            else
+                Renderer.resetShaderInstanced();
+        }else{
             if(type==BatchType.INDIVIDUAL)Renderer.setShader(material.shader);
-            else Renderer.setShaderInstanced(material.shader);
+            else
+                Renderer.setShaderInstanced(material.shader);
         }
-        
+
         // ensure the new shader has projection/view matricies
         Renderer.restoreProjection();
         Renderer.restoreView();
-        
-        var sampleObject = (Instanceable)objects.getFirst();
+
+        var object = objects.getFirst();
+
+        var sampleObject = (object instanceof Instanceable i)?i:null;
         Renderer.bindTexture(material==null?ResourceManager.getMissingTexture():material.texture);
         Renderer.setColor(Color.WHITE);
-        sampleObject.preRender();
+        if(sampleObject!=null)sampleObject.preRender();
         PerformanceTracker.push(type);
         type.render(this);
         PerformanceTracker.pop();
-        sampleObject.postRender();
+        if(sampleObject!=null)sampleObject.postRender();
         Renderer.resetShader();
     }
 
@@ -76,14 +79,13 @@ public class Batch implements AutoCloseable{
     private void init(){
         initialized = true;
         if(type==BatchType.INDIVIDUAL)return;
-        
+
         // Send mesh data to GPU
-        
         vao = glGenVertexArrays();
         vbo = glGenBuffers();
         ebo = glGenBuffers();
         ssbo = glGenBuffers();
-        
+
         var first = (Instanceable)objects.getFirst();
         var mesh = first.getMesh();
         float[] verticies = new float[mesh.verticies.size()*Vertex.SIZE];
@@ -91,7 +93,7 @@ public class Batch implements AutoCloseable{
             var vertex = mesh.verticies.get(v);
             System.arraycopy(vertex.getGLData(), 0, verticies, v*Vertex.SIZE, Vertex.SIZE);
         }
-        
+
         int[] indicies = new int[mesh.triangles.size()*Triangle.SIZE];
         for(int t = 0; t<mesh.triangles.size(); t++){
             var triangle = mesh.triangles.get(t);
@@ -118,22 +120,22 @@ public class Batch implements AutoCloseable{
         //tex
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
-        
+
         glBindVertexArray(0);
-        
+
         modelMatrixBuffer = MemoryUtil.memAllocFloat(objects.size()*16);
-        
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*64, type.glDrawHint);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         float[] sampleData = first.getInstanceData();
         dataSize = sampleData==null?0:sampleData.length;
-        
+
         if(dataSize>0){
             extraDataSSBO = glGenBuffers();
             extraDataBuffer = MemoryUtil.memAllocFloat(objects.size()*dataSize);
-            
+
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, extraDataSSBO);
             glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*dataSize*4, type.glDrawHint);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -158,9 +160,8 @@ public class Batch implements AutoCloseable{
             modelMatrixBuffer.position(modelMatrixBuffer.position()+16); // increment it >.>
         }
         modelMatrixBuffer.flip();
-        
+
         // Write to GPU
-        
         glBindBuffer(GL_ARRAY_BUFFER, ssbo);
         glBufferData(GL_ARRAY_BUFFER, (long)objects.size()*64, type.glDrawHint);
         glBufferSubData(GL_ARRAY_BUFFER, 0, modelMatrixBuffer);
@@ -174,14 +175,15 @@ public class Batch implements AutoCloseable{
             if(data!=null)extraDataBuffer.put(data);
         }
         extraDataBuffer.flip();
-        
+
         glBindBuffer(GL_ARRAY_BUFFER, extraDataSSBO);
         glBufferData(GL_ARRAY_BUFFER, (long)objects.size()*dataSize*4, type.glDrawHint);
         glBufferSubData(GL_ARRAY_BUFFER, 0, extraDataBuffer);
     }
     void drawInstanced(){
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
-        if(extraDataSSBO!=0)glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, extraDataSSBO);
+        if(extraDataSSBO!=0)
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, extraDataSSBO);
         glBindVertexArray(vao);
         glDrawElementsInstanced(GL_TRIANGLES, tris*Triangle.SIZE, GL_UNSIGNED_INT, 0, objects.size());
         PerformanceTracker.incrementCounter("glDrawElementsInstanced ("+objects.getFirst().getClass().getSimpleName()+" x"+objects.size()+")");

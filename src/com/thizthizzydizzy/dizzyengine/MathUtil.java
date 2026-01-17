@@ -91,6 +91,7 @@ public class MathUtil{
     public static int logBase(int base, int n){
         return (int)(log(n)/log(base));
     }
+    @Deprecated // math is wrong, something might rely on that. Use lerps instead.
     public static double getValueBetweenTwoValues(double pos1, double val1, double pos2, double val2, double pos){
         if(pos1>pos2){
             return getValueBetweenTwoValues(pos2, val2, pos1, val1, pos);
@@ -100,6 +101,7 @@ public class MathUtil{
         double valDiff = val2-val1;
         return percent*valDiff+val1;
     }
+    @Deprecated // math is wrong, something might rely on that. Use lerps instead.
     public static float getValueBetweenTwoValues(float pos1, float val1, float pos2, float val2, float pos){
         if(pos1>pos2){
             return getValueBetweenTwoValues(pos2, val2, pos1, val1, pos);
@@ -134,7 +136,13 @@ public class MathUtil{
         Vector3f p = convertPointInverted(x, y, z, x0, y0, z0, xRot, yRot, zRot);
         return p.x>0&&p.y>0&&p.z>0&&p.x<width&&p.y<height&&p.z<depth;
     }
+    public static double distance(Vector3f v1, Vector3f v2){//I know one's float and one's double... don't worry about it
+        return Math.sqrt(Math.pow(v1.x-v2.x, 2)+Math.pow(v1.y-v2.y, 2)+Math.pow(v1.z-v2.z, 2));
+    }
     public static double distance(Vector3f v1, Vector3d v2){//I know one's float and one's double... don't worry about it
+        return Math.sqrt(Math.pow(v1.x-v2.x, 2)+Math.pow(v1.y-v2.y, 2)+Math.pow(v1.z-v2.z, 2));
+    }
+    public static double distance(Vector3d v1, Vector3d v2){//I know one's float and one's double... don't worry about it
         return Math.sqrt(Math.pow(v1.x-v2.x, 2)+Math.pow(v1.y-v2.y, 2)+Math.pow(v1.z-v2.z, 2));
     }
     //VR

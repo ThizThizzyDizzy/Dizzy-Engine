@@ -3,7 +3,9 @@ import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
+import com.thizthizzydizzy.dizzyengine.world.flat.FlatWorldLayer;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
@@ -19,7 +21,7 @@ public class PerformanceOverlay extends DizzyLayer{
         if(layer==null)DizzyEngine.addLayer(layer = new PerformanceOverlay());
     }
     private int currentPage = 0;
-    private static final int numPages = 1;
+    private static final int numPages = 2;
     @Override
     public void init(){
     }
@@ -43,7 +45,7 @@ public class PerformanceOverlay extends DizzyLayer{
     public void render(double deltaTime){
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-        Renderer.view(viewMatrix);
+        Renderer.setExactView(viewMatrix);
         Renderer.projection(new Matrix4f().ortho(0, DizzyEngine.screenSize.x, DizzyEngine.screenSize.y, 0, 10, -10));
         Renderer.setColor(Color.WHITE);
         lineOffset = -scroll;
@@ -52,6 +54,27 @@ public class PerformanceOverlay extends DizzyLayer{
             case 1 -> {
                 text("=== Performance Tracker: Counters ===");
                 drawPerfTrackerGroup("GLOBAL", PerformanceTracker.rootGroup, 0);
+            }
+            case 2 -> {
+                text("=== Debug Overlay: Dynamic World Objects ===");
+                var flatWorldLayer = DizzyEngine.getLayer(FlatWorldLayer.class);
+                if(flatWorldLayer==null){
+                    text("FlatWorldLayer not found");
+                    break;
+                }
+                var projection = flatWorldLayer.createProjectionMatrix();
+                var view = flatWorldLayer.createViewMatrix();
+                view = Renderer.applyViewMatrixPreProcessors(view);
+                var viewProjection = projection.mul(view);
+                var objects = flatWorldLayer.getObjects();
+                for(int i = 0; i<objects.size(); i++){
+                    var object = objects.get(i);
+                    if(object.isStatic())continue;
+                    Vector3f coords = new Vector3f();
+                    viewProjection.project(object.getPosition(), new int[]{0, DizzyEngine.screenSize.y-1, DizzyEngine.screenSize.x, -DizzyEngine.screenSize.y}, coords);
+                    Renderer.drawText(coords.x, coords.y, object.getClass().getName(), lineHeight);
+                    Renderer.drawText(coords.x, coords.y+lineHeight, object.getPosition().toString(), lineHeight);
+                }
             }
         }
     }

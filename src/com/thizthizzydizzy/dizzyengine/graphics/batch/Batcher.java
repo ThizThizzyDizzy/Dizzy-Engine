@@ -72,7 +72,7 @@ public class Batcher implements AutoCloseable{
             }
             if(targetBatch==null){
                 BatchType type = object.isStatic()?BatchType.STATIC_INSTANCED:BatchType.DYNAMIC_INSTANCED;
-                if(object.getMaterial()==null)type = BatchType.INDIVIDUAL;
+                if(object.getMaterial()==null||!(object instanceof Instanceable))type = BatchType.INDIVIDUAL;
                 targetBatch = new Batch(type, object.getMaterial());
                 newBatches.add(targetBatch);
             }

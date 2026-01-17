@@ -12,14 +12,17 @@ public class NoclipProcessor extends DizzyLayer{
     public static float rotationSpeedMultiplier = 1f;
     public static boolean enableInput = true;
     public static void initialize(){
-        if(layer==null)DizzyEngine.addLayer(layer = new NoclipProcessor());
+        if(layer==null){
+            DizzyEngine.addLayer(layer = new NoclipProcessor());
+            Renderer.addViewMatrixPreprocessor((t) -> transformMatrix(t));
+        }
     }
-    public static void transformMatrix(){
-        transformMatrix(new Matrix4f());
+    public static Matrix4f transformMatrix(){
+        return transformMatrix(new Matrix4f());
     }
-    public static void transformMatrix(Matrix4f base){
+    public static Matrix4f transformMatrix(Matrix4f base){
         initialize();
-        Renderer.view(base.rotate(layer.rotation.conjugate(new Quaternionf())).translate(layer.position.mul(-1, new Vector3f())));
+        return base.rotate(layer.rotation.conjugate(new Quaternionf())).translate(layer.position.mul(-1, new Vector3f()));
     }
     public static void reset(){
         initialize();

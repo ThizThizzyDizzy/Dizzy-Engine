@@ -325,7 +325,7 @@ public class DizzyEngine{
                     glDisable(GL_CULL_FACE);
                     glDisable(GL_DEPTH_TEST);
                     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                    Renderer.view(windowViewMatrix);
+                    Renderer.setExactView(windowViewMatrix);
                     Renderer.projection(windowProjectionMatrix);
                     Renderer.fillRect(0, 0, screenSize.x, screenSize.y, screenBuffer.texture);//draw screen buffer to renderbuffer
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -346,7 +346,7 @@ public class DizzyEngine{
     public static <T extends DizzyLayer> T getLayer(Class<T> clazz){
         T found = null;
         for(var layer : layers){
-            if(layer.getClass()==clazz){
+            if(clazz.isAssignableFrom(layer.getClass())){
                 if(found!=null){
                     throw new UnsupportedOperationException("Found multiple layers of type "+clazz.getName()+"!");
                 }
