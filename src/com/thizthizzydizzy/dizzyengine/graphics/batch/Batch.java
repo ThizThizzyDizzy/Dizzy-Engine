@@ -23,6 +23,7 @@ public class Batch implements AutoCloseable{
     public final Material material;
     public boolean dirty = false;
     private boolean initialized = false;
+    public String debugIndex; // used to identify the batch index on the debug overlay.
     public Batch(BatchType type, Material material){
         this.type = type;
         this.material = material;

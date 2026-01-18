@@ -91,6 +91,19 @@ public class Batcher implements AutoCloseable{
 
         return allBatches;
     }
+    public Batch getLastBatch(WorldObject object){
+        for(int i = 0; i<staticBatches.size(); i++){
+            var batch = staticBatches.get(i);
+            batch.debugIndex = "S"+i;
+            if(batch.objects.contains(object))return batch;
+        }
+        for(int i = 0; i<deadBatches.size(); i++){
+            var batch = deadBatches.get(i);
+            batch.debugIndex = "D"+i;
+            if(batch.objects.contains(object))return batch;
+        }
+        return null;
+    }
     @Override
     public void close() throws Exception{
         for(var batch : staticBatches){

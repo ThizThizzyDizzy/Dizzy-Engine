@@ -20,7 +20,7 @@ public abstract class FlatWorldLayer extends DizzyLayer{
     public float zoom = 1;
     private final Vector3f chunkSize;
 
-    private final Batcher batcher = new Batcher();
+    public final Batcher batcher = new Batcher();
 
     private final List<WorldObject> objects = new ArrayList();
     private final HashMap<Class<? extends WorldObject>, List<? extends WorldObject>> indicies = new HashMap<>();

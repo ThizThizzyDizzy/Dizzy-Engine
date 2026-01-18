@@ -5,7 +5,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.mesh.Mesh;
 import com.thizthizzydizzy.dizzyengine.graphics.mesh.builder.AxialQuadMeshBuilder;
 import com.thizthizzydizzy.dizzyengine.world.object.SizedWorldObject;
 import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
-public class ThreeQuarterWorldObject extends SizedWorldObject implements Instanceable{
+public abstract class ThreeQuarterWorldObject extends SizedWorldObject implements Instanceable{
     private Mesh mesh;
     @Override
     public AxisAlignedBoundingBox getAxisAlignedBoundingBox(){
@@ -16,8 +16,10 @@ public class ThreeQuarterWorldObject extends SizedWorldObject implements Instanc
     }
     @Override
     public boolean canInstance(WorldObject other){
-        return other instanceof ThreeQuarterWorldObject tqwo&&getSize().equals(tqwo.getSize());
+        if(other instanceof ThreeQuarterWorldObject tqwo)return canInstance(tqwo);
+        return false;
     }
+    public abstract boolean canInstance(ThreeQuarterWorldObject other);
     @Override
     public Mesh getMesh(){
         if(mesh==null)mesh = generateMesh();

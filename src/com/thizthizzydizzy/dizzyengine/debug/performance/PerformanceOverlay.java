@@ -4,6 +4,8 @@ import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.world.flat.FlatWorldLayer;
+import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
+import java.util.function.Function;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -22,6 +24,8 @@ public class PerformanceOverlay extends DizzyLayer{
     }
     private int currentPage = 0;
     private static final int numPages = 2;
+    private int subpage = 1;
+    private static final int numSubpages2 = 2;
     @Override
     public void init(){
     }
@@ -37,8 +41,14 @@ public class PerformanceOverlay extends DizzyLayer{
             if(currentPage>numPages)currentPage = 0;
         }
         if(currentPage==1){
-            if(key==GLFW.GLFW_KEY_PAGE_DOWN)scroll+=8;
+            if(key==GLFW.GLFW_KEY_PAGE_DOWN)scroll += 8;
             if(key==GLFW.GLFW_KEY_PAGE_UP)scroll = Math.max(0, scroll-8);
+        }
+        if(currentPage==2){
+            if(key==GLFW.GLFW_KEY_PAGE_DOWN)subpage++;
+            if(key==GLFW.GLFW_KEY_PAGE_UP)subpage--;
+            if(subpage<1)subpage = 1;
+            if(subpage>numSubpages2)subpage = numSubpages2;
         }
     }
     @Override
@@ -49,18 +59,36 @@ public class PerformanceOverlay extends DizzyLayer{
         Renderer.projection(new Matrix4f().ortho(0, DizzyEngine.screenSize.x, DizzyEngine.screenSize.y, 0, 10, -10));
         Renderer.setColor(Color.WHITE);
         lineOffset = -scroll;
-        if(currentPage>0)text("DizzyEngine Performance Overlay - Page "+currentPage+"/"+numPages);
+        if(currentPage>0)
+            text("DizzyEngine Performance Overlay - Page "+currentPage+"/"+numPages);
         switch(currentPage){
             case 1 -> {
                 text("=== Performance Tracker: Counters ===");
                 drawPerfTrackerGroup("GLOBAL", PerformanceTracker.rootGroup, 0);
             }
             case 2 -> {
-                text("=== Debug Overlay: Dynamic World Objects ===");
+                text("=== World Debug Overlay ===");//
+                text("- ("+subpage+"/"+numSubpages2+") -");
+                
                 var flatWorldLayer = DizzyEngine.getLayer(FlatWorldLayer.class);
                 if(flatWorldLayer==null){
                     text("FlatWorldLayer not found");
                     break;
+                }
+                
+                Function<WorldObject, String> func = null;
+                switch(subpage){
+                    case 1 -> {
+                        text("=== Dynamic Object Positions ===");
+                        func = (object) -> object.isStatic()?null:object.getClass().getName()+"\n"+object.getPosition().toString();
+                    }
+                    case 2 -> {
+                        text("=== Object Batches ===");
+                        func = (object) -> {
+                            var batch = flatWorldLayer.batcher.getLastBatch(object);
+                            return batch==null?null:batch.debugIndex;
+                        };
+                    }
                 }
                 var projection = flatWorldLayer.createProjectionMatrix();
                 var view = flatWorldLayer.createViewMatrix();
@@ -69,11 +97,15 @@ public class PerformanceOverlay extends DizzyLayer{
                 var objects = flatWorldLayer.getObjects();
                 for(int i = 0; i<objects.size(); i++){
                     var object = objects.get(i);
-                    if(object.isStatic())continue;
-                    Vector3f coords = new Vector3f();
-                    viewProjection.project(object.getPosition(), new int[]{0, DizzyEngine.screenSize.y-1, DizzyEngine.screenSize.x, -DizzyEngine.screenSize.y}, coords);
-                    Renderer.drawText(coords.x, coords.y, object.getClass().getName(), lineHeight);
-                    Renderer.drawText(coords.x, coords.y+lineHeight, object.getPosition().toString(), lineHeight);
+                    String text = func.apply(object);
+                    if(text!=null){
+                        Vector3f coords = new Vector3f();
+                        viewProjection.project(object.getPosition(), new int[]{0, DizzyEngine.screenSize.y-1, DizzyEngine.screenSize.x, -DizzyEngine.screenSize.y}, coords);
+                        String[] lines = text.split("\n");
+                        for(int line = 0; line<lines.length; line++){
+                            Renderer.drawText(coords.x, coords.y+lineHeight*line, lines[line], lineHeight);
+                        }
+                    }
                 }
             }
         }
@@ -87,13 +119,13 @@ public class PerformanceOverlay extends DizzyLayer{
     }
     private void drawPerfTrackerGroup(String name, PerformanceTrackerGroup group, int depth){
         String prefix = "";
-        for(int i = 0; i<depth; i++)prefix+=" | ";
+        for(int i = 0; i<depth; i++)prefix += " | ";
         text(prefix+"-- "+name+" --");
-        prefix+=" | ";
-        for(var counter : group.counters.entrySet().stream().sorted((e1,e2)->e1.getValue()-e2.getValue()).toList()){
+        prefix += " | ";
+        for(var counter : group.counters.entrySet().stream().sorted((e1, e2) -> e1.getValue()-e2.getValue()).toList()){
             text(prefix+counter.getKey()+": "+counter.getValue());
         }
-        for(var subgroup : group.subgroups.entrySet().stream().sorted((e1,e2)->e1.getKey().compareTo(e2.getKey())).toList()){
+        for(var subgroup : group.subgroups.entrySet().stream().sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey())).toList()){
             drawPerfTrackerGroup(subgroup.getKey(), subgroup.getValue(), depth+1);
         }
     }
