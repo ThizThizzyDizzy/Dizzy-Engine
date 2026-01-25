@@ -13,6 +13,7 @@ public class Slider extends Component{
     private final double max;
     private double value;
     public boolean enabled = true;
+    public boolean snapToInt = false;
     public boolean pressed;
     private final ArrayList<Runnable> actions = new ArrayList<>();
     public Slider(double min, double max, double value){
@@ -22,8 +23,9 @@ public class Slider extends Component{
         this.min = min;
         this.max = max;
         this.value = value;
-        handle.setValue(value);
-        label.setLabel(text);
+        double normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        if(handle!=null)handle.setValue(normalizedValue);
+        if(label!=null)label.setLabel(text);
     }
     @Override
     public void draw(double deltaTime){
@@ -50,11 +52,21 @@ public class Slider extends Component{
         if(pressed&&isCursorFocused[id]){
             double normalizedValue = Math.max(0, Math.min(1, xpos/getWidth()));//TODO insets
             var newValue = Math.max(min, Math.min(max, normalizedValue*(max-min)+min));
+            if(snapToInt)newValue = Math.round(newValue);
             if(newValue!=value){
                 value = newValue;
-                handle.setValue(normalizedValue);
+                if(handle!=null)handle.setValue((value - min) / (max - min));
                 runActions();
             }
+        }
+    }
+    public void setValue(double value){
+        if(snapToInt)value = Math.round(value);
+        double normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
+        if(this.value != value){
+            this.value = value;
+            if(handle!=null)handle.setValue(normalizedValue);
+            runActions();
         }
     }
     public double getValue(){

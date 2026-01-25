@@ -3,6 +3,7 @@ import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.ui.component.Component;
 import com.thizthizzydizzy.dizzyengine.ui.component.ScrollBar;
+import com.thizthizzydizzy.dizzyengine.ui.component.Slider;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ColorBackgroundLayer;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ColoredLinearHandle;
 import com.thizthizzydizzy.dizzyengine.ui.component.layer.ComponentHandle;
@@ -29,6 +30,12 @@ public abstract class UILayer extends DizzyLayer{
     }
     {
         defaultComponentHandles.put(ScrollBar.class, () -> new ColoredLinearHandle(Color.BLACK));
+        defaultComponentHandles.put(Slider.class, () -> {
+            var handle = new ColoredLinearHandle(Color.BLACK);
+            handle.setSize(0.05);
+            handle.setOrientation(true);
+            return handle;
+        });
     }
     public <T extends Menu> T open(T menu){
         if(this.menu!=null)this.menu.onMenuClosed();
