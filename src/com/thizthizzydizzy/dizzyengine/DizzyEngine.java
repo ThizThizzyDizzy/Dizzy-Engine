@@ -197,6 +197,10 @@ public class DizzyEngine{
         }
         Logger.pop();
     }
+    public static void setTitle(String title){
+        if(headless)return;
+        glfwSetWindowTitle(window, title);
+    }
     public static void setWindowIcon(Image image){
         if(headless)return;
         Logger.push("DizzyEngine");
