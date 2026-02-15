@@ -2,6 +2,7 @@ package com.thizthizzydizzy.dizzyengine;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
+import com.thizthizzydizzy.dizzyengine.discord.DiscordBotTerminal;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
@@ -48,6 +49,7 @@ public class DizzyEngine{
     public static boolean headless = false;
     private static final ArrayList<Runnable> shutdownHooks = new ArrayList<>();
     private static DizzyEngineTerminal terminal;
+    private static DiscordBotTerminal discordBotTerminal;
     public static void onInitGLFW(Runnable func){
         initFuncsGLFW.add(func);
     }
@@ -94,6 +96,17 @@ public class DizzyEngine{
         }, "DizzyEngine Terminal");
         terminalThread.setDaemon(true);
         terminalThread.start();
+        String discordToken = System.getProperty("dizzyengine.terminal.discord.token");
+        String discordChannel = System.getProperty("dizzyengine.terminal.discord.channel");
+        if(discordToken != null && !discordToken.isEmpty() && discordChannel != null && !discordChannel.isEmpty()){
+            Logger.info("Initializing Discord bot terminal");
+            discordBotTerminal = new DiscordBotTerminal(discordToken, discordChannel, terminal);
+            shutdownHooks.add(() -> {
+                if(discordBotTerminal != null){
+                    discordBotTerminal.shutdown();
+                }
+            });
+        }
         if(headless){
             Logger.info("Running headless - skipping window initialization");
         }else{
