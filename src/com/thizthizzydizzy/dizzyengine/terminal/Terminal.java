@@ -26,4 +26,10 @@ public abstract class Terminal{
             throw new IllegalArgumentException("Command already registered: "+cmd);
         commands.put(cmd, command);
     }
+    public static TaskContext wrapWithTaskContext(Consumer<String> output){
+        if(output instanceof TaskContext){
+            return (TaskContext)output;
+        }
+        return new TaskOutputConsumer(output);
+    }
 }
