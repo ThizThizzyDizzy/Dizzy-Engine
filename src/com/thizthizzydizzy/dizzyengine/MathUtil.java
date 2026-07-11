@@ -198,6 +198,27 @@ public class MathUtil{
         if(isPrime(n+step))return n+step;
         return nextPrime(n+step, step);
     }
+    public static long gcd(long a, long b){
+        while(b!=0){
+            long temp = b;
+            b = a%b;
+            a = temp;
+        }
+        return a;
+    }
+    public static int[] makeIntegerRatio(float a, float b){
+        final long multiplier = 10_000_000L;
+        
+        long scaledA = Math.round(a*multiplier);
+        long scaledB = Math.round(b*multiplier);
+
+        long gcd = gcd(Math.abs(scaledA), Math.abs(scaledB));
+
+        int finalA = (int)(scaledA/gcd);
+        int finalB = (int)(scaledB/gcd);
+        
+        return new int[]{finalA, finalB};
+    }
     public static float clamp(float val, float min, float max){
         return Math.max(min, Math.min(val, max));
     }
@@ -215,6 +236,9 @@ public class MathUtil{
     }
     public static double lerp(double a, double b, double t){
         return a+(b-a)*t;
+    }
+    public static int lerpToInt(int a, int b, float t){
+        return (int)(a+(b-a)*t);
     }
     public static float inverseLerp(float a, float b, float v){
         return (v-a)/(b-a);

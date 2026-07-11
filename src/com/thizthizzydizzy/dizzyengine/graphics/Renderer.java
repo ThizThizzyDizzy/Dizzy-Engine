@@ -1,5 +1,6 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
+import com.thizthizzydizzy.dizzyengine.MathUtil;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
@@ -16,6 +17,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -27,7 +30,7 @@ public class Renderer{
     private static Font font;
     private static Stack<Bound> boundStack = new Stack<>();
     private static Matrix4fStack modelMatStack = new Matrix4fStack(64);
-    private static final HashMap<String, Element> elements = new HashMap<>();
+    protected static final HashMap<String, Element> elements = new HashMap<>();
     public static float preferredTextScale = 24;
     private static final ArrayList<Function<Matrix4f, Matrix4f>> viewPreprocessors = new ArrayList<>();
     public static void addViewMatrixPreprocessor(Function<Matrix4f, Matrix4f> preprocessor){
@@ -527,7 +530,7 @@ public class Renderer{
     }
     public static void initElements(){
         for(Element e : elements.values())e.init();
-        
+
         DizzyEngine.addShutdownHook(Renderer::cleanupElements);
     }
     public static void cleanupElements(){
@@ -572,7 +575,7 @@ public class Renderer{
             y1 = t;
         }
         bindTexture(texture);
-        
+
         model(new Matrix4f().setTranslation(x1, y1, z).scale(x2-x1, y2-y1, 1));
         drawElement("rect");
         resetModelMatrix();
@@ -591,7 +594,7 @@ public class Renderer{
             z1 = t;
         }
         bindTexture(texture);
-        
+
         model(new Matrix4f().setTranslation(x1, y, z1).scale(x2-x1, 1, z2-z1));
         drawElement("rect-xz");
         resetModelMatrix();
@@ -664,6 +667,174 @@ public class Renderer{
         }
         drawElement(element, left, y, top, right-left, y, bottom-top);
     }
+
+    @Deprecated
+    public static void fillPolygon(float[] xPoints, float[] yPoints){
+        unbindTexture();
+        int points = xPoints.length;
+        if(points>4){
+            float x0 = xPoints[0];
+            float y0 = yPoints[0];
+            for(int i = 1; i<xPoints.length-1; i++){
+                fillPolygon(new float[]{x0, xPoints[i], xPoints[i+1]}, new float[]{y0, yPoints[i], yPoints[i+1]});
+            }
+            return;
+        }
+        if(points<3)throw new IllegalArgumentException("Invalid number of points for polygon: "+points);
+        if(points==3){
+            drawScreenTri(xPoints[0], yPoints[0], xPoints[1], yPoints[1], xPoints[2], yPoints[2], 1, 0, 0, 0, 0, 0, 0);
+        }
+        if(points==4){
+            drawScreenQuad(xPoints[0], yPoints[0], xPoints[1], yPoints[1], xPoints[2], yPoints[2], xPoints[3], yPoints[3], 1, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+    }
+    @Deprecated
+    public static void fillTri(float x1, float y1, float x2, float y2, float x3, float y3){
+        drawScreenTri(x1, y1, x2, y2, x3, y3, 1, 0, 0, 0, 0, 0, 0);
+    }
+    @Deprecated
+    public static void fillQuad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4){
+        drawScreenQuad(x1, y1, x2, y2, x3, y3, x4, y4, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
+    @Deprecated
+    public static void drawScreenTri(float x1, float y1, float x2, float y2, float x3, float y3, float z, float s0, float t0, float s1, float t1, float s2, float t2){
+        int vao = glGenVertexArrays();
+        int vbo = glGenBuffers();
+        int ebo = glGenBuffers();
+
+        float[] verticies = new float[]{
+            x1, y1, z, 0, 0, -1, s0, t0,
+            x2, y2, z, 0, 0, -1, s1, t1,
+            x3, y3, z, 0, 0, -1, s2, t2
+        };
+        int[] indicies = new int[]{
+            0, 1, 2
+        };
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+        //pos
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+        //norm
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+        //tex
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0); //actually draw it
+        glBindVertexArray(0);
+        glDeleteBuffers(ebo);
+        glDeleteBuffers(vbo);
+        glDeleteVertexArrays(vao);
+    }
+    @Deprecated
+    public static void drawScreenQuad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float z, float s0, float t0, float s1, float t1, float s2, float t2, float s3, float t3){
+        drawQuad(new Vector3f(x1, y1, z), new Vector3f(x2, y2, z), new Vector3f(x3, y3, z), new Vector3f(x4, y4, z), new Vector2f(s0, t0), new Vector2f(s1, t1), new Vector2f(s2, t2), new Vector2f(s3, t3), new Vector3f(0, 0, -1));
+    }
+
+    @Deprecated
+    public static void drawTri(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f uv1, Vector2f uv2, Vector2f uv3, Vector3f n1, Vector3f n2, Vector3f n3){
+        int vao = glGenVertexArrays();
+        int vbo = glGenBuffers();
+        int ebo = glGenBuffers();
+
+        float[] verticies = new float[]{
+            p1.x, p1.y, p1.z, n1.x, n1.y, n1.z, uv1.x, uv1.y,
+            p2.x, p2.y, p2.z, n2.x, n2.y, n2.z, uv2.x, uv2.y,
+            p3.x, p3.y, p3.z, n3.x, n3.y, n3.z, uv3.x, uv3.y,};
+        int[] indicies = new int[]{
+            0, 1, 2
+        };
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+        //pos
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+        //norm
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+        //tex
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0); //actually draw it
+        glBindVertexArray(0);
+        glDeleteBuffers(ebo);
+        glDeleteBuffers(vbo);
+        glDeleteVertexArrays(vao);
+    }
+    @Deprecated
+    public static void drawQuad(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4, Vector2f uv1, Vector2f uv2, Vector2f uv3, Vector2f uv4, Vector3f normal){
+        int vao = glGenVertexArrays();
+        int vbo = glGenBuffers();
+        int ebo = glGenBuffers();
+
+        float[] verticies = new float[]{
+            p1.x, p1.y, p1.z, normal.x, normal.y, normal.z, uv1.x, uv1.y,//top left
+            p2.x, p2.y, p2.z, normal.x, normal.y, normal.z, uv2.x, uv2.y,//bottom left
+            p3.x, p3.y, p3.z, normal.x, normal.y, normal.z, uv3.x, uv3.y,//top right
+            p4.x, p4.y, p4.z, normal.x, normal.y, normal.z, uv4.x, uv4.y//bottom right
+        };
+        int[] indicies = new int[]{
+            1, 0, 2,
+            3, 1, 2
+        };
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, verticies, GL_STREAM_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicies, GL_STREAM_DRAW);
+
+        //pos
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 8*4, 0);
+
+        //norm
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, 8*4, 3*4);
+
+        //tex
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, false, 8*4, 6*4);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //actually draw it
+        glBindVertexArray(0);
+        glDeleteBuffers(ebo);
+        glDeleteBuffers(vbo);
+        glDeleteVertexArrays(vao);
+    }
+    @Deprecated
+    public static void drawCircle(float x, float y, float innerRadius, float outerRadius){
+        int resolution = (int)(2*MathUtil.pi()*outerRadius);
+        if(innerRadius==0){
+            fillRegularPolygon(x, y, Math.max(3, resolution), outerRadius);
+            return;
+        }
+        fillHollowRegularPolygon(x, y, Math.max(3, resolution), innerRadius, outerRadius);
+    }
+
     public static void fillRegularPolygon(float x, float y, int sides, float radius){
         fillRegularPolygon(x, y, sides, radius, radius);
     }
@@ -932,12 +1103,18 @@ public class Renderer{
         lastView.set(matrix);
         shader.setUniformMatrix4fv("view", matrix);
     }
+    public static void setTemporaryView(Matrix4f matrix){
+        shader.setUniformMatrix4fv("view", matrix);
+    }
     public static void restoreView(){
         setExactView(lastView);
     }
     private static Matrix4f lastProjection = new Matrix4f();
     public static void projection(Matrix4f matrix){
         lastProjection.set(matrix);
+        shader.setUniformMatrix4fv("projection", matrix);
+    }
+    public static void setTemporaryProjection(Matrix4f matrix){
         shader.setUniformMatrix4fv("projection", matrix);
     }
     public static void restoreProjection(){

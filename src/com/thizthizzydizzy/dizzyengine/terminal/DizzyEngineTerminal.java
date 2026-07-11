@@ -1,6 +1,7 @@
 package com.thizthizzydizzy.dizzyengine.terminal;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.debug.NoclipProcessor;
+import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceOverlay;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -50,6 +51,24 @@ public class DizzyEngineTerminal extends Terminal{
                 NoclipProcessor.reset();
                 NoclipProcessor.enableInput = firstRun || !NoclipProcessor.enableInput;
                 output.accept("Noclip reset, input "+(NoclipProcessor.enableInput?"Enabled":"Disabled"));
+            }
+        });
+        registerCommand(new TerminalCommand(){
+            @Override
+            public String getBaseCommand(){
+                return "overlay";
+            }
+            @Override
+            public void registerArguments(){
+                registerArgument(null, null, 1);
+            }
+            @Override
+            protected void run(Consumer<String> output, ArrayList<FlagArguments> flagArguments) throws Exception{
+                String arg = flagArguments.getFirst().arguments.getFirst();
+                switch(arg){
+                    case "performance" -> PerformanceOverlay.initialize();
+                    default -> output.accept("Invalid overlay: "+arg);
+                }
             }
         });
     }

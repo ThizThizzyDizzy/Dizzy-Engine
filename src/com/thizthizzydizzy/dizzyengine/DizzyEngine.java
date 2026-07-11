@@ -48,6 +48,7 @@ public class DizzyEngine{
 
     public static boolean headless = false;
     private static final ArrayList<Runnable> shutdownHooks = new ArrayList<>();
+    private static final ArrayList<Runnable> closeHooks = new ArrayList<>();
     private static DizzyEngineTerminal terminal;
     private static DiscordBotTerminal discordBotTerminal;
     public static void onInitGLFW(Runnable func){
@@ -98,11 +99,11 @@ public class DizzyEngine{
         terminalThread.start();
         String discordToken = System.getProperty("dizzyengine.terminal.discord.token");
         String discordChannel = System.getProperty("dizzyengine.terminal.discord.channel");
-        if(discordToken != null && !discordToken.isEmpty() && discordChannel != null && !discordChannel.isEmpty()){
+        if(discordToken!=null&&!discordToken.isEmpty()&&discordChannel!=null&&!discordChannel.isEmpty()){
             Logger.info("Initializing Discord bot terminal");
             discordBotTerminal = new DiscordBotTerminal(discordToken, discordChannel, terminal);
             shutdownHooks.add(() -> {
-                if(discordBotTerminal != null){
+                if(discordBotTerminal!=null){
                     discordBotTerminal.shutdown();
                 }
             });
@@ -119,7 +120,7 @@ public class DizzyEngine{
             });
             if(!glfwInit())
                 throw new RuntimeException("Failed to initialize GLFW!");
-            shutdownHooks.add(()->{
+            shutdownHooks.add(() -> {
                 glfwTerminate();
             });
             Logger.info("Initializing window");
@@ -295,9 +296,14 @@ public class DizzyEngine{
                 }
             }else{
                 if(glfwWindowShouldClose(window)){
-                    Logger.info("Window closed!");
-                    running = false;
-                    continue;
+                    for(var hook : closeHooks){
+                        hook.run();
+                    }
+                    if(glfwWindowShouldClose(window)){
+                        Logger.info("Window closed!");
+                        running = false;
+                        continue;
+                    }
                 }
                 if(windowSizeChanged||screenBuffer==null){
                     windowSizeChanged = false;
@@ -397,6 +403,9 @@ public class DizzyEngine{
             hook.run();
             it.remove(); // Make sure they can only ever be run once
         }
+    }
+    public static void addCloseHook(Runnable hook){
+        closeHooks.add(hook);
     }
     public static DizzyEngineTerminal getTerminal(){
         return terminal;

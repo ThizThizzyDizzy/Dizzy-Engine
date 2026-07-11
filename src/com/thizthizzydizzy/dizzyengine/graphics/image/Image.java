@@ -1,5 +1,11 @@
 package com.thizthizzydizzy.dizzyengine.graphics.image;
+import com.thizthizzydizzy.dizzyengine.io.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 import org.lwjgl.BufferUtils;
 public class Image{
     private final int width;
@@ -75,6 +81,7 @@ public class Image{
     }
     public ByteBuffer getGLData(){
         ByteBuffer data = BufferUtils.createByteBuffer(width*height*4);
+        //TODO flip?  // for(int y = height-1; y>=0; y--){
         for(int y = 0; y<height; y++){
             for(int x = 0; x<width; x++){
                 data.put((byte)getRed(x, y));
@@ -83,7 +90,7 @@ public class Image{
                 data.put((byte)getAlpha(x, y));
             }
         }
-        data.rewind();
+        ((Buffer)data).rewind();
         return data;
     }
     public Image copy(){
@@ -103,5 +110,21 @@ public class Image{
             }
         }
         return copy;
+    }
+    public String toBase64(){
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            ImageIO.write(this, stream);
+            return Base64.getEncoder().encodeToString(stream.toByteArray());
+        }catch(IOException ex){
+            throw new RuntimeException("Failed to encode base 64!", ex);
+        }
+    }
+    public static Image fromBase64(String string){
+        if(string==null)return null;
+        try(ByteArrayInputStream stream = new ByteArrayInputStream(Base64.getDecoder().decode(string))){
+            return ImageIO.read(stream);
+        }catch(IOException ex){
+            throw new RuntimeException("Failed to decode base 64!", ex);
+        }
     }
 }
