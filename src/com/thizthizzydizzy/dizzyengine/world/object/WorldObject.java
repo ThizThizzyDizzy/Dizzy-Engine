@@ -48,7 +48,7 @@ public abstract class WorldObject{
         return position.get(new Vector3f());
     }
     public void setPosition(Vector3f position){
-        if(!this.position.equals(position)&&isStatic){
+        if(isStatic&&!isDirty&&!this.position.equals(position)){
             Logger.warn("A static object of type "+getClass().getName()+" just moved!");
             markDirty();
         }

@@ -271,7 +271,6 @@ public class DizzyEngine{
         Logger.push(layer);
         if(layer instanceof UILayer ui)currentUIContext = ui;
         event.run();
-        currentUIContext = null;
         Logger.pop();
     }
     public static void start(){

@@ -8,7 +8,7 @@ public abstract class SizedWorldObject extends WorldObject implements BoundedObj
         return size.get(new Vector3f());
     }
     public void setSize(Vector3f size){
-        if(!this.size.equals(size)&&isStatic()){
+        if(isStatic()&&!isDirty()&&!this.size.equals(size)){
             Logger.warn("A static object of type "+getClass().getName()+" just resized!");
             markDirty();
         }
