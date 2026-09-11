@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
@@ -51,6 +52,7 @@ public class DizzyEngine{
     private static final ArrayList<Runnable> closeHooks = new ArrayList<>();
     private static DizzyEngineTerminal terminal;
     private static DiscordBotTerminal discordBotTerminal;
+    private static final CountDownLatch startupLatch = new CountDownLatch(1);
     public static void onInitGLFW(Runnable func){
         initFuncsGLFW.add(func);
     }
@@ -87,10 +89,12 @@ public class DizzyEngine{
         terminal = new DizzyEngineTerminal();
         Thread terminalThread = new Thread(() -> {
             try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))){
-                while(true){
-                    String line = reader.readLine();
+                String line;
+                while((line = reader.readLine())!=null){
+                    awaitStart();
                     terminal.run(System.out::println, line);
                 }
+                Logger.debug("Terminal input stream closed (EOF)");
             }catch(IOException ex){
                 Logger.error("Error reading System.in!", ex);
             }
@@ -273,7 +277,15 @@ public class DizzyEngine{
         event.run();
         Logger.pop();
     }
+    public static void awaitStart(){
+        try{
+            startupLatch.await();
+        }catch(InterruptedException ex){
+            Thread.currentThread().interrupt();
+        }
+    }
     public static void start(){
+        startupLatch.countDown();
         running = true;
         for(var thread : unmanagedUpdateThreads)thread.start();
         for(var thread : fixedUpdateThreads)thread.start();

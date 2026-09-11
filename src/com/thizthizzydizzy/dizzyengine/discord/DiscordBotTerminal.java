@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.discord;
+import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import com.thizthizzydizzy.dizzyengine.terminal.DizzyEngineTerminal;
 import com.thizthizzydizzy.dizzyengine.terminal.TaskOutputConsumer;
@@ -76,6 +77,7 @@ public class DiscordBotTerminal extends ListenerAdapter{
         
         // Run terminal handling off the JDA event thread
         commandExecutor.submit(() -> {
+            DizzyEngine.awaitStart();
             currentChannel = channel;
             DiscordTaskOutputConsumer taskConsumer = new DiscordTaskOutputConsumer(channel);
             terminal.run(taskConsumer, messageContent);
