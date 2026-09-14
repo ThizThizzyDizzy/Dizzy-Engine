@@ -58,6 +58,7 @@ public abstract class TerminalCommand{
                     }else
                         commandArguments.add(new FlagArguments(flag, 0));
                 }
+                if(currentFlagArguments==null && args[i].length()>1)continue;
             }
             if(currentFlagArguments==null){
                 baseCommandArguments.arguments.add(args[i]);
