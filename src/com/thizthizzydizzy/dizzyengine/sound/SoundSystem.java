@@ -11,8 +11,13 @@ import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALC10;
 import static org.lwjgl.openal.ALC10.*;
 import org.lwjgl.openal.ALCCapabilities;
+import org.lwjgl.openal.ALCapabilities;
+import org.lwjgl.openal.SOFTDeviceClock;
 import org.lwjgl.openal.EXTEfx;
 public class SoundSystem{
+    private static volatile long audioDevice;
+    private static volatile ALCapabilities audioCapabilities;
+    private static volatile ALCCapabilities deviceCapabilities;
     public static int FRAMES_PER_BUFFER = 8192;//Number of frames per buffer for streaming audio
     private static final ArrayList<SoundSource> sources = new ArrayList<>();
     private static final ArrayList<SoundBuffer> buffers = new ArrayList<>();
@@ -24,7 +29,9 @@ public class SoundSystem{
         if(device==0){
             Logger.error("Failed to open default device");
         }
+        audioDevice = device;
         ALCCapabilities deviceCapabilites = ALC.createCapabilities(device);
+        deviceCapabilities = deviceCapabilites;
         IntBuffer contextAttributes = BufferUtils.createIntBuffer(16);
         contextAttributes.put(ALC_REFRESH).put(60);
         contextAttributes.put(ALC_SYNC).put(ALC_FALSE);
@@ -43,7 +50,7 @@ public class SoundSystem{
         if(!alcMakeContextCurrent(newContext)){
             Logger.error("Failed to make OpenAL context current!");
         }
-        AL.createCapabilities(deviceCapabilites);
+        audioCapabilities = AL.createCapabilities(deviceCapabilites);
 
         //define listener
         alListener3f(AL_POSITION, 0f, 0f, 0f);
@@ -52,7 +59,21 @@ public class SoundSystem{
         checkALError();
         Logger.pop();
     }
+    /** Bind LWJGL dispatch on worker/timing threads sharing the process OpenAL context. */
+    public static void bindToCurrentThread(){
+        if(audioCapabilities==null)throw new IllegalStateException("SoundSystem has not been initialized");
+        AL.setCurrentThread(audioCapabilities);
+    }
+    /** -1 means the backend cannot expose device latency. */
+    public static long getOutputLatencyNanos(){
+        if(deviceCapabilities==null||!deviceCapabilities.ALC_SOFT_device_clock)return -1;
+        return SOFTDeviceClock.alcGetInteger64vSOFT(audioDevice, SOFTDeviceClock.ALC_DEVICE_LATENCY_SOFT);
+    }
+    static void removeSource(SoundSource source){
+        synchronized(sources){ sources.remove(source); }
+    }
     public static void updateSounds(long updateCounter){
+        bindToCurrentThread();
         synchronized(sources){
             for(var source : sources){
                 source.update();
@@ -61,8 +82,9 @@ public class SoundSystem{
         }
     }
     public static void cleanup(){
+        bindToCurrentThread();
         synchronized(sources){
-            for(var source : sources){
+            for(var source : new ArrayList<>(sources)){
                 source.cleanup();
             }
         }
@@ -72,15 +94,18 @@ public class SoundSystem{
             }
         }
     }
-    public static void releaseBuffer(int id){
-        for(var buffer : buffers)if(buffer.getID()==id)buffer.release();
-    }
-    public static SoundBuffer getBuffer(int format, ByteBuffer data, int frequency){
-        for(var buffer : buffers){
-            if(buffer.available())
-                return buffer.setData(format, data, frequency);
+    public static synchronized void releaseBuffer(int id){
+        synchronized(buffers){
+            for(var buffer : buffers)if(buffer.getID()==id)buffer.release();
         }
-        return new SoundBuffer(format, data, frequency);
+    }
+    public static synchronized SoundBuffer getBuffer(int format, ByteBuffer data, int frequency){
+        synchronized(buffers){
+            for(var buffer : buffers){
+                if(buffer.available())return buffer.setData(format, data, frequency);
+            }
+            return new SoundBuffer(format, data, frequency);
+        }
     }
     /**
      * Gets or creates a sound source

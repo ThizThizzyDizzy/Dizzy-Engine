@@ -4,21 +4,27 @@ import java.io.IOException;
 import java.util.ArrayList;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import org.joml.Vector3f;
+import org.lwjgl.openal.AL;
+import org.lwjgl.openal.SOFTSourceLatency;
 import org.joml.Vector3fc;
 import static org.lwjgl.openal.AL10.*;
 public class SoundSource{
     private final int id;
     public ArrayList<Sound> soundQueue = new ArrayList<>();
-    public SoundStream currentSound = null;
-    private int consumedBuffers;
+    public volatile SoundStream currentSound = null;
+    private volatile int consumedBuffers;
+    private final ArrayList<Integer> queuedBufferIds = new ArrayList<>();
+    private volatile boolean prepared;
+    private volatile boolean cleaned;
     public SoundSource(){
-        SoundSystem.addSource(this);
+        SoundSystem.bindToCurrentThread();
         id = alGenSources();
         setPosition(new Vector3f());
         setVelocity(new Vector3f());
         setPitch(1);
         setGain(1);
         setLoop(false);
+        SoundSystem.addSource(this);
     }
 
     public void setPosition(Vector3fc pos){
@@ -37,7 +43,7 @@ public class SoundSource{
         alSourcei(id, AL_LOOPING, loop?AL_TRUE:AL_FALSE);
     }
 
-    public void queueSound(Sound sound){
+    public synchronized void queueSound(Sound sound){
         soundQueue.add(sound);
     }
     /**
@@ -46,14 +52,14 @@ public class SoundSource{
      *
      * @param sound the sound to play
      */
-    public void playSound(Sound sound){
+    public synchronized void playSound(Sound sound){
         stopPlaying();
         startPlaying(sound);
     }
     /**
      * Stop playing the current sound and clear all queued sounds.
      */
-    public void stopPlaying(){
+    public synchronized void stopPlaying(){
         soundQueue.clear();
         skip();
     }
@@ -61,27 +67,30 @@ public class SoundSource{
      * Stop playing the current sound. This does not clear queued sounds.
      */
     public synchronized void skip(){
+        if(cleaned)return;
         var stream = currentSound;
         currentSound = null;
         consumedBuffers = 0;
-        if(getState()!=AL_STOPPED){
-            int processed = alGetSourcei(id, AL_BUFFERS_QUEUED);
-            alSourceStop(id);
-            for(int i = 0; i<processed; i++){
-                SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
-            }
-        }
+        prepared = false;
+        alSourceStop(id);
+        // AL_INITIAL sources have unplayed buffers, which cannot be unqueued as processed.
+        // Detaching clears the whole queue for either INITIAL or STOPPED sources.
+        alSourcei(id, AL_BUFFER, 0);
+        for(int buffer : queuedBufferIds)SoundSystem.releaseBuffer(buffer);
+        queuedBufferIds.clear();
         soundQueue.clear();
         if(stream!=null)stream.close();
     }
 
     public int getState(){
+        if(cleaned)return AL_STOPPED;
         return alGetSourcei(id, AL_SOURCE_STATE);
     }
     private void startPlaying(Sound sound){
         try{
             var stream = sound.stream();
             if(!stream.hasNext()){
+                stream.close();
                 Logger.info("Ignored request to play empty song!");
                 return;
             }
@@ -90,29 +99,74 @@ public class SoundSource{
             consumedBuffers = 0;
             var buffer = currentSound.next();
             if(buffer==null)return;
-            alSourceQueueBuffers(id, buffer.getID());
+            queueBuffer(buffer.getID());
             alSourcePlay(id);
         }catch(IOException|UnsupportedAudioFileException ex){
             Logger.error(ex);
         }
     }
 
-    public void cleanup(){
+    /** Load and queue an initial streaming window without starting playback. */
+    public synchronized void prepareSound(Sound sound) throws IOException, UnsupportedAudioFileException{
+        if(cleaned)throw new IllegalStateException("Source was cleaned up");
         stopPlaying();
-        alDeleteSources(id);
+        SoundStream stream = sound.stream();
+        currentSound = stream;
+        prepared = true; // SoundSystem.update must never consume or start a prepared source.
+        try{
+            int count = 0;
+            while(count<Math.min(4, SoundSystem.BUFFER_QUEUE_SIZE)&&stream.hasNext()){
+                SoundBuffer buffer = stream.next();
+                if(buffer==null)throw new IOException("Unable to read audio buffer");
+                queueBuffer(buffer.getID());
+                count++;
+            }
+            if(count==0)throw new UnsupportedAudioFileException("Empty or unsupported audio file");
+            int error = alGetError();
+            if(error!=AL_NO_ERROR)throw new IOException("OpenAL preparation error: "+error);
+        }catch(IOException|UnsupportedAudioFileException|RuntimeException ex){
+            stopPlaying();
+            throw ex;
+        }
+    }
+    /** Deadline path: no file I/O, decoding, logging, or allocation. */
+    public synchronized void startPrepared(){
+        if(cleaned||!prepared)throw new IllegalStateException("Source is not prepared");
+        alSourcePlay(id);
+        prepared = false;
+    }
+    public boolean isPrepared(){ return prepared; }
+    public long getPlaybackLatencyNanos(){
+        if(!AL.getCapabilities().AL_SOFT_source_latency)return -1;
+        long[] values = new long[2];
+        SOFTSourceLatency.alGetSourcei64vSOFT(id, SOFTSourceLatency.AL_SAMPLE_OFFSET_LATENCY_SOFT, values);
+        return values[1];
+    }
+    public void cleanup(){
+        // Never take the sources-list lock while holding the source lock.
+        SoundSystem.removeSource(this);
+        synchronized(this){
+            if(cleaned)return;
+            stopPlaying();
+            alDeleteSources(id);
+            cleaned = true;
+        }
     }
     public synchronized void update(){
+        if(cleaned||prepared)return;
         if(currentSound!=null){
             int processed = alGetSourcei(id, AL_BUFFERS_PROCESSED);
             for(int i = 0; i<processed; i++){
-                SoundSystem.releaseBuffer(alSourceUnqueueBuffers(id));
+                int buffer = alSourceUnqueueBuffers(id);
+                queuedBufferIds.remove(Integer.valueOf(buffer));
+                SoundSystem.releaseBuffer(buffer);
             }
             consumedBuffers += processed;
             if(currentSound.hasNext()){
                 int queued = alGetSourcei(id, AL_BUFFERS_QUEUED);
                 if(queued<SoundSystem.BUFFER_QUEUE_SIZE){
                     var buf = currentSound.next().getID();
-                    alSourceQueueBuffers(id, buf);
+                    queueBuffer(buf);
                 }
             }else if(getState()==AL_STOPPED){
                 currentSound.close();
@@ -123,16 +177,22 @@ public class SoundSource{
             startPlaying(soundQueue.remove(0));
         }
     }
-    public void play(){
+    private void queueBuffer(int buffer){
+        alSourceQueueBuffers(id, buffer);
+        queuedBufferIds.add(buffer);
+    }
+    public synchronized void play(){
         alSourcePlay(id);
     }
-    public void pause(){
+    public synchronized void pause(){
         alSourcePause(id);
     }
     public float getPlayhead(){
-        return currentSound==null?-1:consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/currentSound.getFrameRate();
+        var stream = currentSound;
+        return stream==null?-1:consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/stream.getFrameRate();
     }
     public float getDuration(){
-        return currentSound==null?-1:currentSound.getDurationInFrames()/currentSound.getFrameRate();
+        var stream = currentSound;
+        return stream==null?-1:stream.getDurationInFrames()/stream.getFrameRate();
     }
 }

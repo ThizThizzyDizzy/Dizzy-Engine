@@ -88,15 +88,23 @@ public class Sound{
         }
     }
     public SoundStream stream() throws IOException, UnsupportedAudioFileException{
+        InputStream supplied = soundSupplier.get();
+        if(supplied==null)throw new IOException("Audio supplier returned no stream");
+        BufferedInputStream input = new BufferedInputStream(supplied);
+        final AudioInputStream decoded;
+        try{
+            decoded = AudioSystem.getAudioInputStream(input);
+            if(decoded.getFormat().isBigEndian())throw new UnsupportedAudioFileException("Big Endian audio files are not supported!");
+        }catch(IOException|UnsupportedAudioFileException|RuntimeException ex){
+            try{ input.close(); }catch(IOException closeFailure){ ex.addSuppressed(closeFailure); }
+            throw ex;
+        }
         return new SoundStream(){
-            final AudioInputStream in;
+            final AudioInputStream in = decoded;
             private AudioFormat format;
             private int alFormat;
             {
-                in = AudioSystem.getAudioInputStream(new BufferedInputStream(soundSupplier.get()));
                 format = in.getFormat();
-                if(format.isBigEndian())
-                    throw new UnsupportedAudioFileException("Big Endian audio files are not supported!");
                 alFormat = switch(format.getChannels()){
                     case 1 ->
                         switch(format.getSampleSizeInBits()){
