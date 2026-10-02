@@ -172,6 +172,9 @@ public class SoundSource{
                 currentSound.close();
                 currentSound = null;
             }
+            // A streaming read can stall long enough to drain the OpenAL queue.
+            // Queueing new data does not restart a stopped source automatically.
+            if(currentSound!=null&&getState()==AL_STOPPED&&alGetSourcei(id, AL_BUFFERS_QUEUED)>0)alSourcePlay(id);
         }
         if(currentSound==null&&!soundQueue.isEmpty()){
             startPlaying(soundQueue.remove(0));
