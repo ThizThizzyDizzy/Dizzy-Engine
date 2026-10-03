@@ -106,7 +106,7 @@ public class SoundSource{
         }
     }
 
-    /** Load and queue an initial streaming window without starting playback. */
+    /** Load and queue five seconds (or the whole shorter sound) without starting playback. */
     public synchronized void prepareSound(Sound sound) throws IOException, UnsupportedAudioFileException{
         if(cleaned)throw new IllegalStateException("Source was cleaned up");
         stopPlaying();
@@ -115,7 +115,8 @@ public class SoundSource{
         prepared = true; // SoundSystem.update must never consume or start a prepared source.
         try{
             int count = 0;
-            while(count<Math.min(4, SoundSystem.BUFFER_QUEUE_SIZE)&&stream.hasNext()){
+            int preloadBuffers = (int)Math.ceil(5.0*stream.getFrameRate()/SoundSystem.FRAMES_PER_BUFFER);
+            while(count<Math.min(preloadBuffers, SoundSystem.BUFFER_QUEUE_SIZE)&&stream.hasNext()){
                 SoundBuffer buffer = stream.next();
                 if(buffer==null)throw new IOException("Unable to read audio buffer");
                 queueBuffer(buffer.getID());
