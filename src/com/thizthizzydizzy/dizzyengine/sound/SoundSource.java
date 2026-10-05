@@ -195,6 +195,12 @@ public class SoundSource{
         var stream = currentSound;
         return stream==null?-1:consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/stream.getFrameRate();
     }
+    /** Playback position including the offset within queued audio, independent of buffer refill cadence. */
+    public synchronized float getPrecisePlayhead(){
+        var stream=currentSound;
+        if(stream==null||cleaned)return -1;
+        return Math.min(getDuration(),consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/stream.getFrameRate()+alGetSourcef(id,org.lwjgl.openal.AL11.AL_SEC_OFFSET));
+    }
     public float getDuration(){
         var stream = currentSound;
         return stream==null?-1:stream.getDurationInFrames()/stream.getFrameRate();
