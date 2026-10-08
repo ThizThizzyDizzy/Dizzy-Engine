@@ -47,10 +47,10 @@ public class ResourceManager{
         if(path==null)return getTexture(missingTexture);
         if(texturesCache.containsKey(path))return texturesCache.get(path);
         //read image
-        stbi_set_flip_vertically_on_load(true);
         ByteBuffer imageData = null;
         IntBuffer width = BufferUtils.createIntBuffer(1);
         IntBuffer height = BufferUtils.createIntBuffer(1);
+        stbi_set_flip_vertically_on_load(true);
         try(InputStream input = getInternalResource(path)){
             if(input==null){
                 Logger.error("Could not find texture: "+path+"!");
@@ -59,15 +59,19 @@ public class ResourceManager{
             imageData = stbi_load_from_memory(loadData(input), width, height, BufferUtils.createIntBuffer(1), 4);
         }catch(IOException ex){
             Logger.error(ex);
+        }finally{
+            stbi_set_flip_vertically_on_load(false);
         }
         if(imageData==null)
             throw new RuntimeException("Failed to load image: "+stbi_failure_reason());
         //finish read image
-        int texture = loadGLTexture(width.get(0), height.get(0), imageData);
-        stbi_image_free(imageData);
-        texturesCache.put(path, texture);
-        stbi_set_flip_vertically_on_load(false);
-        return texture;
+        try{
+            int texture = loadGLTexture(width.get(0), height.get(0), imageData);
+            texturesCache.put(path, texture);
+            return texture;
+        }finally{
+            stbi_image_free(imageData);
+        }
     }
     public static int loadGLTexture(int width, int height, ByteBuffer imageData){
         int texture = glGenTextures();
@@ -86,12 +90,13 @@ public class ResourceManager{
     public static int getTexture(Image image){
         if(image==null)return 0;
         if(!imgs.containsKey(image)){
-            imgs.put(image, loadGLTexture(image.getWidth(), image.getHeight(), image.getGLData()));
+            imgs.put(image, loadGLTexture(image.getWidth(), image.getHeight(), image.getGLData(true)));
         }
         return imgs.get(image);
     }
     public static void deleteTexture(Image image){
-        deleteTexture(imgs.remove(image));
+        Integer texture = imgs.remove(image);
+        if(texture!=null)deleteTexture(texture);
     }
     public static void deleteTexture(int texture){
         glDeleteTextures(texture);

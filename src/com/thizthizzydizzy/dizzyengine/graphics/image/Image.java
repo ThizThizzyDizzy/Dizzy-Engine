@@ -79,10 +79,19 @@ public class Image{
         }
         return sub;
     }
+    /**
+     * Returns packed RGBA pixels in top-first row order, suitable for GLFW icons.
+     */
     public ByteBuffer getGLData(){
+        return getGLData(false);
+    }
+    /**
+     * Returns packed RGBA pixels, optionally in bottom-first row order for textures.
+     */
+    public ByteBuffer getGLData(boolean flipVertically){
         ByteBuffer data = BufferUtils.createByteBuffer(width*height*4);
-        //TODO flip?  // for(int y = height-1; y>=0; y--){
-        for(int y = 0; y<height; y++){
+        for(int row = 0; row<height; row++){
+            int y = flipVertically?height-row-1:row;
             for(int x = 0; x<width; x++){
                 data.put((byte)getRed(x, y));
                 data.put((byte)getGreen(x, y));
