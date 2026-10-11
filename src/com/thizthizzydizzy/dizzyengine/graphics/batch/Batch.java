@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics.batch;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Material;
@@ -10,12 +11,6 @@ import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
-import static org.lwjgl.opengl.GL43.*;
 import org.lwjgl.system.MemoryUtil;
 public class Batch implements AutoCloseable{
     public final BatchType type;

@@ -8,6 +8,7 @@ import org.lwjgl.openal.AL;
 import org.lwjgl.openal.SOFTSourceLatency;
 import org.joml.Vector3fc;
 import static org.lwjgl.openal.AL10.*;
+import static org.lwjgl.openal.AL11.AL_SEC_OFFSET;
 public class SoundSource{
     private final int id;
     public ArrayList<Sound> soundQueue = new ArrayList<>();
@@ -199,7 +200,7 @@ public class SoundSource{
     public synchronized float getPrecisePlayhead(){
         var stream=currentSound;
         if(stream==null||cleaned)return -1;
-        return Math.min(getDuration(),consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/stream.getFrameRate()+alGetSourcef(id,org.lwjgl.openal.AL11.AL_SEC_OFFSET));
+        return Math.min(getDuration(),consumedBuffers*SoundSystem.FRAMES_PER_BUFFER/stream.getFrameRate()+alGetSourcef(id,AL_SEC_OFFSET));
     }
     public float getDuration(){
         var stream = currentSound;

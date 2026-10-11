@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
@@ -9,7 +10,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2fc;
 import org.joml.Vector3fc;
 import org.joml.Vector4fc;
-import static org.lwjgl.opengl.GL20.*;
 public class Shader implements AutoCloseable{
     private int vertexShader;
     private int fragmentShader;

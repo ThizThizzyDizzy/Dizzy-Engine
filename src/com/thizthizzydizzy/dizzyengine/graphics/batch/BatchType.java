@@ -1,8 +1,8 @@
 package com.thizthizzydizzy.dizzyengine.graphics.batch;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import org.joml.Matrix4f;
-import static org.lwjgl.opengl.GL15.*;
 public enum BatchType{
     STATIC_INSTANCED(GL_STATIC_DRAW){
         @Override

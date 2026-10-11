@@ -1,7 +1,6 @@
 package com.thizthizzydizzy.dizzyengine;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import java.nio.ByteBuffer;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.*;
 public class Framebuffer{
     public final int id;
     public final int renderBuffer;

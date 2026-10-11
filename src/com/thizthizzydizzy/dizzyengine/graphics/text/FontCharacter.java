@@ -1,7 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics.text;
-import static org.lwjgl.opengl.GL30.*;
-import org.lwjgl.stb.STBTTAlignedQuad;
-import static org.lwjgl.stb.STBTruetype.*;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 public class FontCharacter{
     private final Font font;
     private final char c;
@@ -19,18 +17,15 @@ public class FontCharacter{
         int vbo = glGenBuffers();
         int ebo = glGenBuffers();
         
-        STBTTAlignedQuad quad = STBTTAlignedQuad.create();
-        float[] xpos = new float[1];
-        float[] ypos = new float[1];
-        stbtt_GetBakedQuad(font.charBuffer, font.bitmapSize, font.bitmapSize, c, xpos, ypos, quad, true);
-        dx = xpos[0];
-        dy = ypos[0];
+        Font.Glyph quad = font.getGlyph(c);
+        dx = quad.advance;
+        dy = 0;
         
         float[] verticies = new float[]{
-            quad.x0()/font.height, quad.y1()/font.height+font.yOff, 0,    0, 0, 0,    quad.s0()/4+margin, quad.t1()/4-margin,//0, 1, //top left
-            quad.x0()/font.height, quad.y0()/font.height+font.yOff, 0,    0, 0, 0,    quad.s0()/4+margin, quad.t0()/4+margin,//0, 0, //bottom left
-            quad.x1()/font.height, quad.y1()/font.height+font.yOff, 0,    0, 0, 0,    quad.s1()/4-margin, quad.t1()/4-margin,//1, 1, //top right
-            quad.x1()/font.height, quad.y0()/font.height+font.yOff, 0,    0, 0, 0,    quad.s1()/4-margin, quad.t0()/4+margin//1, 0, //bottom right
+            quad.x0()/font.height, quad.y1()/font.height+font.yOff, 0,    0, 0, 0,    quad.s0()+margin, quad.t1()-margin,//0, 1, //top left
+            quad.x0()/font.height, quad.y0()/font.height+font.yOff, 0,    0, 0, 0,    quad.s0()+margin, quad.t0()+margin,//0, 0, //bottom left
+            quad.x1()/font.height, quad.y1()/font.height+font.yOff, 0,    0, 0, 0,    quad.s1()-margin, quad.t1()-margin,//1, 1, //top right
+            quad.x1()/font.height, quad.y0()/font.height+font.yOff, 0,    0, 0, 0,    quad.s1()-margin, quad.t0()+margin//1, 0, //bottom right
         };
         int[] indicies = new int[]{
             1, 0, 2,
@@ -64,18 +59,15 @@ public class FontCharacter{
         int vbo = glGenBuffers();
         int ebo = glGenBuffers();
         
-        STBTTAlignedQuad quad = STBTTAlignedQuad.create();
-        float[] xpos = new float[1];
-        float[] ypos = new float[1];
-        stbtt_GetBakedQuad(font.charBuffer, font.bitmapSize, font.bitmapSize, c, xpos, ypos, quad, true);
-        dx = xpos[0];
-        dy = ypos[0];
+        Font.Glyph quad = font.getGlyph(c);
+        dx = quad.advance;
+        dy = 0;
         
         float[] verticies = new float[]{
-            quad.x0()/font.height+tilt, -quad.y0()/font.height, 0,    0, 0, 0,    quad.s0()/4, quad.t1()/4,//0, 1, //top left
-            quad.x0()/font.height, -quad.y1()/font.height, 0,    0, 0, 0,    quad.s0()/4, quad.t0()/4,//0, 0, //bottom left
-            quad.x1()/font.height+tilt, -quad.y0()/font.height, 0,    0, 0, 0,    quad.s1()/4, quad.t1()/4,//1, 1, //top right
-            quad.x1()/font.height, -quad.y1()/font.height, 0,    0, 0, 0,    quad.s1()/4, quad.t0()/4//1, 0, //bottom right
+            quad.x0()/font.height+tilt, -quad.y0()/font.height, 0,    0, 0, 0,    quad.s0(), quad.t1(),//0, 1, //top left
+            quad.x0()/font.height, -quad.y1()/font.height, 0,    0, 0, 0,    quad.s0(), quad.t0(),//0, 0, //bottom left
+            quad.x1()/font.height+tilt, -quad.y0()/font.height, 0,    0, 0, 0,    quad.s1(), quad.t1(),//1, 1, //top right
+            quad.x1()/font.height, -quad.y1()/font.height, 0,    0, 0, 0,    quad.s1(), quad.t0()//1, 0, //bottom right
         };
         int[] indicies = new int[]{
             1, 0, 2,

@@ -1,11 +1,11 @@
 package com.thizthizzydizzy.dizzyengine.ui;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
-import static org.lwjgl.opengl.GL11.*;
 public class FlatUI extends UILayer{
     public final Vector2d[] cursorPosition = new Vector2d[DizzyEngine.CURSOR_LIMIT];
     private final Matrix4f viewMatrix = new Matrix4f().setTranslation(0, 0, -5);

@@ -1,6 +1,8 @@
 package com.thizthizzydizzy.dizzyengine;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
+import com.thizthizzydizzy.dizzyengine.io.ImageIO;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,9 +10,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
-import org.lwjgl.BufferUtils;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.*;
+import com.thizthizzydizzy.dizzyengine.platform.Buffers;
 import static org.lwjgl.stb.STBImage.*;
 public class ResourceManager{
     public static InputStream getInternalResource(String path){
@@ -27,7 +27,7 @@ public class ResourceManager{
             }
             output.close();
             byte[] data = output.toByteArray();
-            ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
+            ByteBuffer buffer = Buffers.createByteBuffer(data.length);
             buffer.put(data);
             buffer.flip();
             return buffer;
@@ -46,17 +46,26 @@ public class ResourceManager{
     public static int getTexture(String path){
         if(path==null)return getTexture(missingTexture);
         if(texturesCache.containsKey(path))return texturesCache.get(path);
+        if(ImageIO.hasBackend()){
+            try(InputStream input = getInternalResource(path)){
+                if(input == null)return getMissingTexture();
+                Image image = ImageIO.read(input);
+                int texture = loadGLTexture(image.getWidth(), image.getHeight(), image.getGLData(true));
+                texturesCache.put(path, texture);
+                return texture;
+            }catch(IOException ex){throw new RuntimeException(ex);}
+        }
         //read image
         ByteBuffer imageData = null;
-        IntBuffer width = BufferUtils.createIntBuffer(1);
-        IntBuffer height = BufferUtils.createIntBuffer(1);
+        IntBuffer width = Buffers.createIntBuffer(1);
+        IntBuffer height = Buffers.createIntBuffer(1);
         stbi_set_flip_vertically_on_load(true);
         try(InputStream input = getInternalResource(path)){
             if(input==null){
                 Logger.error("Could not find texture: "+path+"!");
                 return getTexture(missingTexture);
             }
-            imageData = stbi_load_from_memory(loadData(input), width, height, BufferUtils.createIntBuffer(1), 4);
+            imageData = stbi_load_from_memory(loadData(input), width, height, Buffers.createIntBuffer(1), 4);
         }catch(IOException ex){
             Logger.error(ex);
         }finally{

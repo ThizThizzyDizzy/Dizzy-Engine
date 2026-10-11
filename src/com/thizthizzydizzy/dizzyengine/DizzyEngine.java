@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
@@ -7,6 +8,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import com.thizthizzydizzy.dizzyengine.platform.Input;
 import com.thizthizzydizzy.dizzyengine.terminal.DizzyEngineTerminal;
 import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.io.BufferedReader;
@@ -25,9 +27,6 @@ import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.opengl.GL;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL30.*;
 import org.lwjgl.system.MemoryUtil;
 public class DizzyEngine{
     public static final Vector2i screenSize = new Vector2i();
@@ -215,6 +214,38 @@ public class DizzyEngine{
         }
         Logger.pop();
     }
+    /** Initializes on a GL context supplied by a host. Does not create a GLFW window or start a loop. */
+    public static void initHosted(int width, int height, Shader defaultShader){
+        mainThread = Thread.currentThread();
+        screenSize.set(width, height);
+        headless = false;
+        Renderer.initElements();
+        Renderer.setDefaultShader(defaultShader);
+        running = true;
+        startupLatch.countDown();
+    }
+    public static void resizeHosted(int width, int height){
+        screenSize.set(width, height);
+        synchronized(layers){wrapEvent(layers, layer -> layer.onScreenSize(screenSize));}
+    }
+    public static void renderHosted(double deltaTime){
+        PerformanceTracker.reset();
+        Logger.reset();
+        glViewport(0, 0, screenSize.x, screenSize.y);
+        glClearColor(0, 0, 0, 1);
+        glStencilMask(0xff);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glStencilMask(0);
+        synchronized(layers){
+            wrapEvent(layers, layer -> {Renderer.reset();layer.render(deltaTime);});
+        }
+    }
+    public static void hostedCursor(int id, double x, double y){dispatchHosted(layer -> layer.onCursorPos(id, x, y));}
+    public static void hostedMouseButton(int id, int button, int action, int mods){dispatchHosted(layer -> layer.onMouseButton(id, button, action, mods));}
+    public static void hostedKey(int id, int key, int action, int mods){dispatchHosted(layer -> layer.onKey(id, key, 0, action, mods));}
+    private static void dispatchHosted(Consumer<DizzyLayer> event){
+        synchronized(layers){wrapEvent(layers, event);}
+    }
     public static void setTitle(String title){
         if(headless)return;
         glfwSetWindowTitle(window, title);
@@ -397,7 +428,7 @@ public class DizzyEngine{
         return currentUIContext;
     }
     public static boolean isKeyDown(int key){
-        return glfwGetKey(window, key)==GLFW_PRESS;
+        return Input.getKey(window, key)==GLFW_PRESS;
     }
     public static void addShutdownHook(AutoCloseable closeable){
         shutdownHooks.add(() -> {

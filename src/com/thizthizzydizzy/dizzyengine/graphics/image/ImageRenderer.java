@@ -1,12 +1,11 @@
 package com.thizthizzydizzy.dizzyengine.graphics.image;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.Framebuffer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import java.nio.ByteBuffer;
 import org.joml.Matrix4f;
-import org.lwjgl.BufferUtils;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.*;
+import com.thizthizzydizzy.dizzyengine.platform.Buffers;
 public abstract class ImageRenderer{
     protected int width;
     protected int height;
@@ -21,7 +20,7 @@ public abstract class ImageRenderer{
         boolean depth = glIsEnabled(GL_DEPTH_TEST);
         if(cull)glDisable(GL_CULL_FACE);
         if(depth)glDisable(GL_DEPTH_TEST);
-        ByteBuffer imageBuffer = BufferUtils.createByteBuffer(width*height*4);
+        ByteBuffer imageBuffer = Buffers.createByteBuffer(width*height*4);
 
         Framebuffer framebuffer = new Framebuffer(width, height);
 
