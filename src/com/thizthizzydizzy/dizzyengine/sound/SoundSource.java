@@ -39,6 +39,9 @@ public class SoundSource{
     public void setGain(float gain){
         alSourcef(id, AL_GAIN, gain);
     }
+    public float getGain(){
+        return alGetSourcef(id, AL_GAIN);
+    }
     public void setLoop(boolean loop){
         alSourcei(id, AL_LOOPING, loop?AL_TRUE:AL_FALSE);
     }
