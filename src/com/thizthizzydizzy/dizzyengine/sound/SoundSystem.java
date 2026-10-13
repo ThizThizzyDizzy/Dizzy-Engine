@@ -69,6 +69,10 @@ public class SoundSystem{
         if(deviceCapabilities==null||!deviceCapabilities.ALC_SOFT_device_clock)return -1;
         return SOFTDeviceClock.alcGetInteger64vSOFT(audioDevice, SOFTDeviceClock.ALC_DEVICE_LATENCY_SOFT);
     }
+    public static String getOutputDeviceName(){
+        String name=alcGetString(audioDevice, alcIsExtensionPresent(audioDevice,"ALC_ENUMERATE_ALL_EXT")?org.lwjgl.openal.EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER:ALC_DEVICE_SPECIFIER);
+        return name==null?"default":name;
+    }
     static void removeSource(SoundSource source){
         synchronized(sources){ sources.remove(source); }
     }
