@@ -26,6 +26,11 @@ public class Shader implements AutoCloseable{
         else instanced = null;
         DizzyEngine.addShutdownHook(this);
     }
+    /** Recompile in a replacement context without deleting stale names or adding hooks. */
+    public void restoreContext(String vertexSource, String fragmentSource){
+        createShaderProgram(vertexSource, fragmentSource);
+        if(instanced!=null)instanced.restoreContext(vertexSource, fragmentSource);
+    }
     private static int compileShader(int shaderType, String src){
         int shader = glCreateShader(shaderType);
         glShaderSource(shader, src);

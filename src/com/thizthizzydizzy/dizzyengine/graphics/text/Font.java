@@ -92,4 +92,13 @@ public class Font{
     public FontCharacter getCharacter(char c){
         return characters.get(c);
     }
+    /** Restore this font after context loss, using an atlas re-uploaded by its owner.
+     * Call with the replacement GL context current. Atlas layout and metrics must match
+     * the original font. Existing FontCharacter references remain valid; stale GL names
+     * are replaced without deleting resources in the new context.
+     */
+    public void restoreContext(int texture){
+        this.texture = texture;
+        for(var character : characters.values())character.restoreContext();
+    }
 }

@@ -1050,6 +1050,9 @@ public class Renderer{
     }
     public static void setDefaultShader(Shader shader){
         defaultShader = shader;
+        // A newly linked program has default uniforms, irrespective of cached state.
+        currentColor.set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
+        boundTexture = -1;
     }
     public static void resetShader(){
         setShader(defaultShader);

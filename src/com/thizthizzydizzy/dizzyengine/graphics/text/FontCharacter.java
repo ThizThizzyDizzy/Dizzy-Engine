@@ -12,6 +12,10 @@ public class FontCharacter{
         init();
         initItalic(0.25f);
     }
+    void restoreContext(){
+        init();
+        initItalic(0.25f);
+    }
     private void init(){
         vao = glGenVertexArrays();
         int vbo = glGenBuffers();

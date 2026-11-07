@@ -232,11 +232,16 @@ public class DizzyEngine{
     }
     /** Rebuild graphics after context loss without restarting layers or update threads.
      * Call on the host render thread with the replacement context current.
+     * Invokes each layer's restoreGraphics() before returning so it can rebuild owned
+     * resources, including font atlases. Rendering must remain stopped until this completes.
      */
     public static void restoreHostedGraphics(Shader defaultShader){
         mainThread = Thread.currentThread();
         ResourceManager.invalidateContextTextures();
         initHostedGraphics(defaultShader, true);
+        synchronized(layers){
+            for(var layer : layers)layer.restoreGraphics();
+        }
     }
     private static void initHostedGraphics(Shader defaultShader, boolean restoring){
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

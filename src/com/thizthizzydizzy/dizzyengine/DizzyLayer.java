@@ -7,6 +7,13 @@ public abstract class DizzyLayer{
     public abstract void init();
     public abstract void render(double deltaTime);
     public abstract void cleanup();
+    /** Called after engine graphics are rebuilt in a replacement hosted GL context.
+     * Re-upload owned textures and restore fonts, shaders, and other GL resources here.
+     * For a retained font, upload its atlas and call Font.restoreContext(newTexture).
+     * Old context names must not be deleted in the replacement context.
+     */
+    public void restoreGraphics(){
+    }
     protected void onChar(int id, int codepoint){
     }
     protected void onCharMods(int id, int codepoint, int mods){
