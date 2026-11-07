@@ -235,6 +235,13 @@ public class DizzyEngine{
         for(var thread : fixedUpdateThreads)thread.start();
         startupLatch.countDown();
     }
+    /** Call on the host render thread while its GL context is current, after rendering has stopped.
+     * Stops updates and runs registered resource cleanup hooks once; stop() alone only stops updates.
+     */
+    public static void shutdownHosted(){
+        stop();
+        runShutdownHooks();
+    }
     public static void resizeHosted(int width, int height){
         screenSize.set(width, height);
         synchronized(layers){wrapEvent(layers, layer -> layer.onScreenSize(screenSize));}
@@ -253,6 +260,8 @@ public class DizzyEngine{
     }
     public static void hostedCursor(int id, double x, double y){dispatchHosted(layer -> layer.onCursorPos(id, x, y));}
     public static void hostedMouseButton(int id, int button, int action, int mods){dispatchHosted(layer -> layer.onMouseButton(id, button, action, mods));}
+    public static void hostedChar(int id, int codepoint){dispatchHosted(layer -> layer.onChar(id, codepoint));}
+    public static void hostedCharMods(int id, int codepoint, int mods){dispatchHosted(layer -> layer.onCharMods(id, codepoint, mods));}
     public static void hostedKey(int id, int key, int action, int mods){dispatchHosted(layer -> layer.onKey(id, key, 0, action, mods));}
     private static void dispatchHosted(Consumer<DizzyLayer> event){
         synchronized(layers){wrapEvent(layers, event);}
