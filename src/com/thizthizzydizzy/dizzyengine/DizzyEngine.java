@@ -39,7 +39,7 @@ public class DizzyEngine{
     private static final ArrayList<FixedUpdateThread> fixedUpdateThreads = new ArrayList<>();
     private static final ArrayList<UnmanagedUpdateThread> unmanagedUpdateThreads = new ArrayList<>();
     private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
-    private static boolean running;
+    private static volatile boolean running;
     private static UILayer currentUIContext;
     private static Thread mainThread;
     public static boolean startMaximized = true;
@@ -236,11 +236,33 @@ public class DizzyEngine{
         startupLatch.countDown();
     }
     /** Call on the host render thread while its GL context is current, after rendering has stopped.
-     * Stops updates and runs registered resource cleanup hooks once; stop() alone only stops updates.
+     * Waits for update callbacks and their cleanup to finish before running resource cleanup hooks once.
+     * stop() alone only requests that updates stop. This method may block until callbacks return.
      */
     public static void shutdownHosted(){
+        if(Thread.currentThread()!=mainThread)
+            throw new IllegalStateException("Hosted shutdown must run on the host render thread");
         stop();
-        runShutdownHooks();
+        boolean interrupted = false;
+        try{
+            for(var thread : unmanagedUpdateThreads)interrupted |= awaitUpdateThread(thread.thread);
+            for(var thread : fixedUpdateThreads)interrupted |= awaitUpdateThread(thread.thread);
+            runShutdownHooks();
+        }finally{
+            if(interrupted)Thread.currentThread().interrupt();
+        }
+    }
+    private static boolean awaitUpdateThread(Thread thread){
+        boolean interrupted = false;
+        while(thread.isAlive()){
+            try{
+                thread.join();
+            }catch(InterruptedException ex){
+                // Resources must remain valid until the callback and its cleanup have finished.
+                interrupted = true;
+            }
+        }
+        return interrupted;
     }
     public static void resizeHosted(int width, int height){
         screenSize.set(width, height);

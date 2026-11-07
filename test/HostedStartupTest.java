@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.joml.Vector2i;
 
 /** Run with java -cp 'build/classes:build/test/classes:lib/*' HostedStartupTest. */
@@ -42,6 +43,23 @@ public class HostedStartupTest{
                 }
             }
         }
+    }
+    private static void await(CountDownLatch latch){
+        try{
+            check(latch.await(5, TimeUnit.SECONDS), "Timed out waiting for test release");
+        }catch(InterruptedException ex){
+            throw new AssertionError(ex);
+        }
+    }
+    private static void waitForJoin(Thread host) throws Exception{
+        long deadline = System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
+        while(System.nanoTime()<deadline){
+            for(var frame : host.getStackTrace()){
+                if(frame.getMethodName().equals("awaitUpdateThread"))return;
+            }
+            Thread.sleep(1);
+        }
+        throw new AssertionError("Host did not wait for update threads");
     }
     public static void main(String[] args) throws Exception{
         Set<Integer> enabled = new HashSet<>();
@@ -82,15 +100,23 @@ public class HostedStartupTest{
             public void cleanup(){}
         });
         CountDownLatch updates = new CountDownLatch(2);
-        var fixed = DizzyEngine.addFixedUpdateThread("test-fixed", tick -> {
-            if(tick==0)updates.countDown();
-        }, null, 100);
-        var unmanaged = DizzyEngine.addUnmanagedUpdateThread("test-unmanaged", tick -> {
-            if(tick==0)updates.countDown();
-        }, null, 1);
+        CountDownLatch releaseUpdates = new CountDownLatch(1);
+        CountDownLatch updateCleanups = new CountDownLatch(2);
+        CountDownLatch releaseCleanups = new CountDownLatch(1);
+        Runnable blockedUpdate = () -> {
+            updates.countDown();
+            await(releaseUpdates);
+        };
+        Runnable blockedCleanup = () -> {
+            updateCleanups.countDown();
+            await(releaseCleanups);
+        };
+        var fixed = DizzyEngine.addFixedUpdateThread("test-fixed", tick -> blockedUpdate.run(), blockedCleanup, 100);
+        var unmanaged = DizzyEngine.addUnmanagedUpdateThread("test-unmanaged", tick -> blockedUpdate.run(), blockedCleanup, 1);
         int[] cleanups = new int[1];
         DizzyEngine.addShutdownHook(() -> {
             check(!DizzyEngine.isRunning(), "Cleanup ran before updates stopped");
+            check(!fixed.thread.isAlive() && !unmanaged.thread.isAlive(), "Resources released before update threads terminated");
             cleanups[0]++;
         });
         try{
@@ -104,10 +130,31 @@ public class HostedStartupTest{
             checkBatchBuffers();
             check(updates.await(2, TimeUnit.SECONDS), "Registered update threads did not run");
         }finally{
+            Thread host = Thread.currentThread();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread coordinator = new Thread(() -> {
+                try{
+                    waitForJoin(host);
+                    check(cleanups[0]==0, "Resource hooks ran during an update callback");
+                    releaseUpdates.countDown();
+                    check(updateCleanups.await(2, TimeUnit.SECONDS), "Update cleanup did not start");
+                    waitForJoin(host);
+                    check(cleanups[0]==0, "Resource hooks ran during update cleanup");
+                }catch(Throwable ex){
+                    failure.set(ex);
+                }finally{
+                    releaseUpdates.countDown();
+                    releaseCleanups.countDown();
+                }
+            }, "shutdown-test-coordinator");
+            coordinator.start();
+            host.interrupt(); // An interrupted host must still wait before destroying resources.
             DizzyEngine.shutdownHosted();
+            check(Thread.interrupted(), "Shutdown lost the host interrupt status");
+            coordinator.join(3000);
+            check(!coordinator.isAlive(), "Shutdown coordinator did not finish");
+            if(failure.get()!=null)throw new AssertionError("Shutdown ordering failed", failure.get());
             DizzyEngine.shutdownHosted();
-            fixed.thread.join(2000);
-            unmanaged.thread.join(2000);
         }
         check(cleanups[0]==1, "Shutdown hook missing or duplicated");
         check(!fixed.thread.isAlive() && !unmanaged.thread.isAlive(), "Update threads did not stop");
