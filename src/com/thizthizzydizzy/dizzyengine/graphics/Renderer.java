@@ -1048,6 +1048,11 @@ public class Renderer{
         shader.setUniform4f("color", red, green, blue, alpha);
         currentColor.set(red, green, blue, alpha);
     }
+    /** Replace the default after context loss, abandoning its old GL names. */
+    public static void restoreDefaultShader(Shader shader){
+        if(defaultShader!=null && defaultShader!=shader)defaultShader.abandonContext();
+        setDefaultShader(shader);
+    }
     public static void setDefaultShader(Shader shader){
         defaultShader = shader;
         // A newly linked program has default uniforms, irrespective of cached state.

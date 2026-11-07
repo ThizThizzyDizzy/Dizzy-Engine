@@ -3,6 +3,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.*;
 import com.thizthizzydizzy.dizzyengine.graphics.text.*;
 import com.thizthizzydizzy.dizzyengine.platform.*;
 import java.lang.reflect.Proxy;
+import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -13,10 +14,27 @@ public class HostedGraphicsRecoveryTest{
     }
     public static void main(String[] args){
         Set<Integer> arrays = new HashSet<>(), textures = new HashSet<>();
+        Set<Integer> programs = new HashSet<>(), shaders = new HashSet<>();
         int[] next = {1}, uploads = {0}, draws = {0}, initializations = {0}, restores = {0};
         GL.setBackend((GLBackend)Proxy.newProxyInstance(GLBackend.class.getClassLoader(),
             new Class<?>[]{GLBackend.class}, (proxy, method, values) -> {
                 switch(method.getName()){
+                    case "glCreateProgram": {
+                        int id = next[0]++;
+                        programs.add(id);
+                        return id;
+                    }
+                    case "glCreateShader": {
+                        int id = next[0]++;
+                        shaders.add(id);
+                        return id;
+                    }
+                    case "glDeleteProgram":
+                        check(programs.remove((Integer)values[0]), "Deleted stale or duplicate program");
+                        break;
+                    case "glDeleteShader":
+                        check(shaders.remove((Integer)values[0]), "Deleted stale or duplicate shader");
+                        break;
                     case "glGenVertexArrays": {
                         int id = next[0]++;
                         arrays.add(id);
@@ -63,14 +81,28 @@ public class HostedGraphicsRecoveryTest{
                 check(font.getStringWidth("AA", 8)==16, "Font metrics changed");
             }
         });
+        int[] uiRestores = {0};
+        for(int i=0; i<2; i++)DizzyEngine.addLayer(new UILayer(){
+            public float getUnitScale(){return 1;}
+            public void init(){}
+            public void cleanup(){}
+            public void render(double deltaTime){}
+            public void restoreGraphics(){
+                check(DizzyEngine.getUIContext()==this, "Wrong UI context during restoration");
+                uiRestores[0]++;
+            }
+        });
         DizzyEngine.initHosted(640, 480, new Shader("void main(){}", "void main(){}"));
         try{
             DizzyEngine.renderHosted(0.016);
             for(int i=0; i<2; i++){
                 arrays.clear();
                 textures.clear();
+                programs.clear();
+                shaders.clear();
                 DizzyEngine.restoreHostedGraphics(new Shader("void main(){}", "void main(){}"));
                 check(restores[0]==i+1, "Missing restoration callback");
+                check(uiRestores[0]==2*(i+1), "Missing UI restoration callbacks");
                 DizzyEngine.renderHosted(0.016);
             }
             check(initializations[0]==1, "Context recovery restarted the layer");
@@ -78,6 +110,7 @@ public class HostedGraphicsRecoveryTest{
         }finally{
             DizzyEngine.shutdownHosted();
         }
+        check(programs.isEmpty() && shaders.isEmpty(), "Live shader resources leaked at shutdown");
         System.out.println("Hosted graphics recovery checks passed");
     }
 }

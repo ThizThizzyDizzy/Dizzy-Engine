@@ -31,6 +31,13 @@ public class Shader implements AutoCloseable{
         createShaderProgram(vertexSource, fragmentSource);
         if(instanced!=null)instanced.restoreContext(vertexSource, fragmentSource);
     }
+    /** Forget names from a lost context without deleting them in the replacement context.
+     * Owners of custom shaders should call this before replacing them during restoration.
+     */
+    public void abandonContext(){
+        program = vertexShader = fragmentShader = 0;
+        if(instanced!=null)instanced.abandonContext();
+    }
     private static int compileShader(int shaderType, String src){
         int shader = glCreateShader(shaderType);
         glShaderSource(shader, src);
@@ -123,9 +130,10 @@ public class Shader implements AutoCloseable{
     }
     @Override
     public void close() throws Exception{
-        glDeleteProgram(program);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
+        if(program!=0)glDeleteProgram(program);
+        if(vertexShader!=0)glDeleteShader(vertexShader);
+        if(fragmentShader!=0)glDeleteShader(fragmentShader);
+        program = vertexShader = fragmentShader = 0;
         if(instanced!=null)instanced.close();
     }
     private String injectCompilerDefinitions(String str){

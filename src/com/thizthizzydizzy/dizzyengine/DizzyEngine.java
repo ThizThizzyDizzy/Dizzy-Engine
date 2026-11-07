@@ -240,7 +240,7 @@ public class DizzyEngine{
         ResourceManager.invalidateContextTextures();
         initHostedGraphics(defaultShader, true);
         synchronized(layers){
-            for(var layer : layers)layer.restoreGraphics();
+            wrapEvent(layers, DizzyLayer::restoreGraphics);
         }
     }
     private static void initHostedGraphics(Shader defaultShader, boolean restoring){
@@ -251,7 +251,8 @@ public class DizzyEngine{
         glEnable(GL_CULL_FACE);
         if(restoring)Renderer.restoreElements();
         else Renderer.initElements();
-        Renderer.setDefaultShader(defaultShader);
+        if(restoring)Renderer.restoreDefaultShader(defaultShader);
+        else Renderer.setDefaultShader(defaultShader);
     }
     /** Call on the host render thread while its GL context is current, after rendering has stopped.
      * Waits for update callbacks and their cleanup to finish before running resource cleanup hooks once.
