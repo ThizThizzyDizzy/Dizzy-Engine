@@ -11,12 +11,22 @@ import java.io.OutputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import org.lwjgl.BufferUtils;
+import com.thizthizzydizzy.dizzyengine.platform.Buffers;
+import java.util.Objects;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
 public class ImageIO{
+    public interface Backend {
+        Image read(InputStream input) throws IOException;
+        void write(Image image, OutputStream output) throws IOException;
+    }
+    private static Backend backend;
+    public static void setBackend(Backend replacement) { backend = Objects.requireNonNull(replacement); }
+    public static boolean hasBackend() { return backend != null; }
+
     public static Image read(InputStream input) throws IOException{
+        if(backend != null)return backend.read(input);
         if(input==null)return null;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         int b;
@@ -26,12 +36,12 @@ public class ImageIO{
         input.close();
         output.close();
         byte[] data = output.toByteArray();
-        ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
+        ByteBuffer buffer = Buffers.createByteBuffer(data.length);
         buffer.put(data);
         ((Buffer)buffer).flip();
-        IntBuffer width = BufferUtils.createIntBuffer(1);;
-        IntBuffer height = BufferUtils.createIntBuffer(1);;
-        ByteBuffer imageData = STBImage.stbi_load_from_memory(buffer, width, height, BufferUtils.createIntBuffer(1), 4);
+        IntBuffer width = Buffers.createIntBuffer(1);;
+        IntBuffer height = Buffers.createIntBuffer(1);;
+        ByteBuffer imageData = STBImage.stbi_load_from_memory(buffer, width, height, Buffers.createIntBuffer(1), 4);
         if(imageData==null)throw new IOException("Failed to load image: "+STBImage.stbi_failure_reason());
         Image image = new Image(width.get(0), height.get(0));
         for(int y = 0; y<image.getHeight(); y++){
@@ -47,7 +57,8 @@ public class ImageIO{
         }
     }
     public static void write(Image image, OutputStream output) throws IOException{
-        ByteBuffer imageData = BufferUtils.createByteBuffer(image.getWidth()*image.getHeight()*4);
+        if(backend != null){backend.write(image, output);return;}
+        ByteBuffer imageData = Buffers.createByteBuffer(image.getWidth()*image.getHeight()*4);
         ((Buffer)imageData).mark();
         for(int y = 0; y<image.getHeight(); y++){
             for(int x = 0; x<image.getWidth(); x++){

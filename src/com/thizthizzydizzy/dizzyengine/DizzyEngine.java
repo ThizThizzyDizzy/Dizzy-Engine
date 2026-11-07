@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
@@ -7,6 +8,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Image;
 import com.thizthizzydizzy.dizzyengine.logging.Logger;
+import com.thizthizzydizzy.dizzyengine.platform.Input;
 import com.thizthizzydizzy.dizzyengine.terminal.DizzyEngineTerminal;
 import com.thizthizzydizzy.dizzyengine.ui.UILayer;
 import java.io.BufferedReader;
@@ -25,9 +27,6 @@ import static org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.opengl.GL;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL30.*;
 import org.lwjgl.system.MemoryUtil;
 public class DizzyEngine{
     public static final Vector2i screenSize = new Vector2i();
@@ -40,7 +39,7 @@ public class DizzyEngine{
     private static final ArrayList<FixedUpdateThread> fixedUpdateThreads = new ArrayList<>();
     private static final ArrayList<UnmanagedUpdateThread> unmanagedUpdateThreads = new ArrayList<>();
     private static final Matrix4f windowViewMatrix = new Matrix4f().setTranslation(0, 0, -5);
-    private static boolean running;
+    private static volatile boolean running;
     private static UILayer currentUIContext;
     private static Thread mainThread;
     public static boolean startMaximized = true;
@@ -214,6 +213,109 @@ public class DizzyEngine{
             });
         }
         Logger.pop();
+    }
+    /** Initializes on a GL context supplied by a host. Does not create a GLFW window or start a loop. */
+    public static void initHosted(int width, int height, Shader defaultShader){
+        mainThread = Thread.currentThread();
+        screenSize.set(width, height);
+        headless = false;
+        ResourceManager.invalidateContextTextures();
+        initHostedGraphics(defaultShader, false);
+        synchronized(layers){
+            wrapEvent(layers, DizzyLayer::init);
+            wrapEvent(layers, layer -> layer.onScreenSize(screenSize));
+        }
+        running = true;
+        for(var thread : unmanagedUpdateThreads)thread.start();
+        for(var thread : fixedUpdateThreads)thread.start();
+        startupLatch.countDown();
+    }
+    /** Rebuild graphics after context loss without restarting layers or update threads.
+     * Call on the host render thread with the replacement context current.
+     * Invokes each layer's restoreGraphics() before returning so it can rebuild owned
+     * resources, including font atlases. Rendering must remain stopped until this completes.
+     */
+    public static void restoreHostedGraphics(Shader defaultShader){
+        mainThread = Thread.currentThread();
+        ResourceManager.invalidateContextTextures();
+        initHostedGraphics(defaultShader, true);
+        synchronized(layers){
+            wrapEvent(layers, DizzyLayer::restoreGraphics);
+        }
+    }
+    private static void initHostedGraphics(Shader defaultShader, boolean restoring){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        if(restoring)Renderer.restoreElements();
+        else Renderer.initElements();
+        if(restoring)Renderer.restoreDefaultShader(defaultShader);
+        else Renderer.setDefaultShader(defaultShader);
+    }
+    /** Call on the host render thread while its GL context is current, after rendering has stopped.
+     * Waits for update callbacks and their cleanup to finish before running resource cleanup hooks once.
+     * stop() alone only requests that updates stop. This method may block until callbacks return.
+     */
+    public static void shutdownHosted(){
+        if(Thread.currentThread()!=mainThread)
+            throw new IllegalStateException("Hosted shutdown must run on the host render thread");
+        stop();
+        boolean interrupted = false;
+        try{
+            for(var thread : unmanagedUpdateThreads)interrupted |= awaitUpdateThread(thread.thread);
+            for(var thread : fixedUpdateThreads)interrupted |= awaitUpdateThread(thread.thread);
+            runShutdownHooks();
+        }finally{
+            if(interrupted)Thread.currentThread().interrupt();
+        }
+    }
+    private static boolean awaitUpdateThread(Thread thread){
+        boolean interrupted = false;
+        while(thread.isAlive()){
+            try{
+                thread.join();
+            }catch(InterruptedException ex){
+                // Resources must remain valid until the callback and its cleanup have finished.
+                interrupted = true;
+            }
+        }
+        return interrupted;
+    }
+    public static void resizeHosted(int width, int height){
+        screenSize.set(width, height);
+        synchronized(layers){wrapEvent(layers, layer -> layer.onScreenSize(screenSize));}
+    }
+    public static void renderHosted(double deltaTime){
+        int hostFramebuffer = glGetInteger(GL_FRAMEBUFFER_BINDING);
+        try{
+            PerformanceTracker.reset();
+            Logger.reset();
+            glViewport(0, 0, screenSize.x, screenSize.y);
+            glClearColor(0, 0, 0, 1);
+            glStencilMask(0xff);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glStencilMask(0);
+            synchronized(layers){
+                wrapEvent(layers, layer -> {
+                    glBindFramebuffer(GL_FRAMEBUFFER, hostFramebuffer);
+                    Renderer.reset();
+                    layer.render(deltaTime);
+                });
+            }
+        }finally{
+            glBindFramebuffer(GL_FRAMEBUFFER, hostFramebuffer);
+        }
+    }
+    public static void hostedCursor(int id, double x, double y){dispatchHosted(layer -> layer.onCursorPos(id, x, y));}
+    public static void hostedScroll(int id, double xoffset, double yoffset){dispatchHosted(layer -> layer.onScroll(id, xoffset, yoffset));}
+    public static void hostedMouseButton(int id, int button, int action, int mods){dispatchHosted(layer -> layer.onMouseButton(id, button, action, mods));}
+    public static void hostedChar(int id, int codepoint){dispatchHosted(layer -> layer.onChar(id, codepoint));}
+    public static void hostedCharMods(int id, int codepoint, int mods){dispatchHosted(layer -> layer.onCharMods(id, codepoint, mods));}
+    public static void hostedKey(int id, int key, int action, int mods){dispatchHosted(layer -> layer.onKey(id, key, 0, action, mods));}
+    private static void dispatchHosted(Consumer<DizzyLayer> event){
+        synchronized(layers){wrapEvent(layers, event);}
     }
     public static void setTitle(String title){
         if(headless)return;
@@ -397,7 +499,7 @@ public class DizzyEngine{
         return currentUIContext;
     }
     public static boolean isKeyDown(int key){
-        return glfwGetKey(window, key)==GLFW_PRESS;
+        return Input.getKey(window, key)==GLFW_PRESS;
     }
     public static void addShutdownHook(AutoCloseable closeable){
         shutdownHooks.add(() -> {

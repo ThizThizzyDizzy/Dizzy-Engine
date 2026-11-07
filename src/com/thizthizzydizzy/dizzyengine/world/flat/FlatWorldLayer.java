@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.world.flat;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
@@ -12,7 +13,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-import static org.lwjgl.opengl.GL11.*;
 public abstract class FlatWorldLayer extends DizzyLayer{
     public float panX;
     public float panY;

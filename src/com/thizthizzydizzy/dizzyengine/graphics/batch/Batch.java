@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics.batch;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
 import com.thizthizzydizzy.dizzyengine.graphics.Material;
@@ -10,13 +11,7 @@ import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
-import static org.lwjgl.opengl.GL43.*;
-import org.lwjgl.system.MemoryUtil;
+import com.thizthizzydizzy.dizzyengine.platform.Buffers;
 public class Batch implements AutoCloseable{
     public final BatchType type;
     public final List<WorldObject> objects = new ArrayList<>();
@@ -124,7 +119,7 @@ public class Batch implements AutoCloseable{
 
         glBindVertexArray(0);
 
-        modelMatrixBuffer = MemoryUtil.memAllocFloat(objects.size()*16);
+        modelMatrixBuffer = Buffers.createFloatBuffer(objects.size()*16);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*64, type.glDrawHint);
@@ -135,7 +130,7 @@ public class Batch implements AutoCloseable{
 
         if(dataSize>0){
             extraDataSSBO = glGenBuffers();
-            extraDataBuffer = MemoryUtil.memAllocFloat(objects.size()*dataSize);
+            extraDataBuffer = Buffers.createFloatBuffer(objects.size()*dataSize);
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, extraDataSSBO);
             glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size()*dataSize*4, type.glDrawHint);
@@ -147,10 +142,11 @@ public class Batch implements AutoCloseable{
     @Override
     public void close() throws Exception{
         if(!initialized)return;
-        MemoryUtil.memFree(modelMatrixBuffer);
-        if(extraDataBuffer!=null)MemoryUtil.memFree(extraDataBuffer);
+        modelMatrixBuffer = null;
+        extraDataBuffer = null;
         glDeleteBuffers(ebo);
         glDeleteBuffers(vbo);
+        glDeleteBuffers(ssbo);
         glDeleteVertexArrays(vao);
         if(extraDataSSBO!=0)glDeleteBuffers(extraDataSSBO);
     }

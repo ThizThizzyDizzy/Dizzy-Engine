@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.MathUtil;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
@@ -20,9 +21,6 @@ import org.joml.Matrix4fStack;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
 public class Renderer{
     private static Shader defaultShader;
     private static Shader shader;
@@ -529,9 +527,12 @@ public class Renderer{
         };
     }
     public static void initElements(){
-        for(Element e : elements.values())e.init();
-
+        restoreElements();
         DizzyEngine.addShutdownHook(Renderer::cleanupElements);
+    }
+    /** Recreate element buffers after context loss without adding cleanup hooks. */
+    public static void restoreElements(){
+        for(Element e : elements.values())e.init();
     }
     public static void cleanupElements(){
         for(Element e : elements.values())e.cleanup();
@@ -1047,8 +1048,16 @@ public class Renderer{
         shader.setUniform4f("color", red, green, blue, alpha);
         currentColor.set(red, green, blue, alpha);
     }
+    /** Replace the default after context loss, abandoning its old GL names. */
+    public static void restoreDefaultShader(Shader shader){
+        if(defaultShader!=null && defaultShader!=shader)defaultShader.abandonContext();
+        setDefaultShader(shader);
+    }
     public static void setDefaultShader(Shader shader){
         defaultShader = shader;
+        // A newly linked program has default uniforms, irrespective of cached state.
+        currentColor.set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
+        boundTexture = -1;
     }
     public static void resetShader(){
         setShader(defaultShader);

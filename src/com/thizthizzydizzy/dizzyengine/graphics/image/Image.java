@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Base64;
-import org.lwjgl.BufferUtils;
+import com.thizthizzydizzy.dizzyengine.platform.Buffers;
 public class Image{
     private final int width;
     private final int height;
@@ -89,7 +89,7 @@ public class Image{
      * Returns packed RGBA pixels, optionally in bottom-first row order for textures.
      */
     public ByteBuffer getGLData(boolean flipVertically){
-        ByteBuffer data = BufferUtils.createByteBuffer(width*height*4);
+        ByteBuffer data = Buffers.createByteBuffer(width*height*4);
         for(int row = 0; row<height; row++){
             int y = flipVertically?height-row-1:row;
             for(int x = 0; x<width; x++){

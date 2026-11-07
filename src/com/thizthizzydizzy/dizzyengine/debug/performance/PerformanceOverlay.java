@@ -3,15 +3,13 @@ import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.DizzyLayer;
 import com.thizthizzydizzy.dizzyengine.graphics.Renderer;
 import com.thizthizzydizzy.dizzyengine.graphics.image.Color;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.world.flat.FlatWorldLayer;
 import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
 import java.util.function.Function;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
-import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
-import static org.lwjgl.opengl.GL11.glDisable;
 public class PerformanceOverlay extends DizzyLayer{
     {
         zIndex = Z_INDEX_OFFSET_DEBUG; // NOTHING should ever render over the debug performance overlay.

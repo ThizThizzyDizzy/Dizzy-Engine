@@ -1,4 +1,5 @@
 package com.thizthizzydizzy.dizzyengine.graphics;
+import static com.thizthizzydizzy.dizzyengine.platform.GL.*;
 import com.thizthizzydizzy.dizzyengine.DizzyEngine;
 import com.thizthizzydizzy.dizzyengine.ResourceManager;
 import com.thizthizzydizzy.dizzyengine.debug.performance.PerformanceTracker;
@@ -9,7 +10,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2fc;
 import org.joml.Vector3fc;
 import org.joml.Vector4fc;
-import static org.lwjgl.opengl.GL20.*;
 public class Shader implements AutoCloseable{
     private int vertexShader;
     private int fragmentShader;
@@ -25,6 +25,18 @@ public class Shader implements AutoCloseable{
         if(compilerDefinitions.length==0)instanced = new Shader(vertexShader, fragmentShader, "INSTANCED");
         else instanced = null;
         DizzyEngine.addShutdownHook(this);
+    }
+    /** Recompile in a replacement context without deleting stale names or adding hooks. */
+    public void restoreContext(String vertexSource, String fragmentSource){
+        createShaderProgram(vertexSource, fragmentSource);
+        if(instanced!=null)instanced.restoreContext(vertexSource, fragmentSource);
+    }
+    /** Forget names from a lost context without deleting them in the replacement context.
+     * Owners of custom shaders should call this before replacing them during restoration.
+     */
+    public void abandonContext(){
+        program = vertexShader = fragmentShader = 0;
+        if(instanced!=null)instanced.abandonContext();
     }
     private static int compileShader(int shaderType, String src){
         int shader = glCreateShader(shaderType);
@@ -118,9 +130,10 @@ public class Shader implements AutoCloseable{
     }
     @Override
     public void close() throws Exception{
-        glDeleteProgram(program);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
+        if(program!=0)glDeleteProgram(program);
+        if(vertexShader!=0)glDeleteShader(vertexShader);
+        if(fragmentShader!=0)glDeleteShader(fragmentShader);
+        program = vertexShader = fragmentShader = 0;
         if(instanced!=null)instanced.close();
     }
     private String injectCompilerDefinitions(String str){
