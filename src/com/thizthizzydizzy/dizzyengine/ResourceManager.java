@@ -103,6 +103,14 @@ public class ResourceManager{
         }
         return imgs.get(image);
     }
+    /** Forget names owned by a destroyed GL context. Call on the render thread
+     * before drawing with the replacement context; never delete these stale names.
+     * CPU images remain available and textures are uploaded lazily on next use.
+     */
+    public static void invalidateContextTextures(){
+        texturesCache.clear();
+        imgs.clear();
+    }
     public static void deleteTexture(Image image){
         Integer texture = imgs.remove(image);
         if(texture!=null)deleteTexture(texture);

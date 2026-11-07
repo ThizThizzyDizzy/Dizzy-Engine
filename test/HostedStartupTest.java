@@ -6,6 +6,7 @@ import com.thizthizzydizzy.dizzyengine.graphics.batch.*;
 import com.thizthizzydizzy.dizzyengine.graphics.mesh.Mesh;
 import com.thizthizzydizzy.dizzyengine.world.object.WorldObject;
 import java.nio.FloatBuffer;
+import com.thizthizzydizzy.dizzyengine.graphics.Shader;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -64,6 +65,9 @@ public class HostedStartupTest{
     public static void main(String[] args) throws Exception{
         Set<Integer> enabled = new HashSet<>();
         int[] blend = new int[2];
+        int[] framebuffer = {7};
+        boolean[] failRender = {false};
+        RuntimeException renderFailure = new RuntimeException("Expected layer failure");
         GL.setBackend((GLBackend)Proxy.newProxyInstance(GLBackend.class.getClassLoader(),
             new Class<?>[]{GLBackend.class}, (proxy, method, values) -> {
                 if(method.getName().equals("glEnable"))enabled.add((Integer)values[0]);
@@ -71,11 +75,16 @@ public class HostedStartupTest{
                     blend[0] = (Integer)values[0];
                     blend[1] = (Integer)values[1];
                 }
+                if(method.getName().equals("glGetShaderiv") || method.getName().equals("glGetProgramiv"))
+                    ((int[])values[2])[0] = 1;
+                if(method.getName().equals("glGetInteger") && (Integer)values[0]==GL.GL_FRAMEBUFFER_BINDING)
+                    return framebuffer[0];
+                if(method.getName().equals("glBindFramebuffer"))framebuffer[0] = (Integer)values[1];
                 if(method.getReturnType()==int.class)return 1;
                 if(method.getReturnType()==boolean.class)return false;
                 return null;
             }));
-        int[] calls = new int[4];
+        int[] calls = new int[6];
         DizzyEngine.addLayer(new DizzyLayer(){
             public void init(){
                 check(!DizzyEngine.isRunning(), "Startup completed before layer initialization");
@@ -96,7 +105,24 @@ public class HostedStartupTest{
                 check(id==3 && codepoint==65 && mods==2, "Character modifiers lost");
                 calls[3]++;
             }
-            public void render(double deltaTime){}
+            protected void onScroll(int id, double xoffset, double yoffset){
+                check(id==3 && xoffset==-1.25 && yoffset==2.5, "Scroll event lost its cursor or offsets");
+                calls[4]++;
+            }
+            public void render(double deltaTime){
+                check(framebuffer[0]==7, "First layer missed host framebuffer");
+                GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 42);
+                if(failRender[0])throw renderFailure;
+            }
+            public void cleanup(){}
+        });
+        DizzyEngine.addLayer(new DizzyLayer(){
+            public void init(){}
+            public void render(double deltaTime){
+                check(framebuffer[0]==7, "Offscreen work redirected the next layer");
+                calls[5]++;
+                GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0);
+            }
             public void cleanup(){}
         });
         CountDownLatch updates = new CountDownLatch(2);
@@ -120,13 +146,25 @@ public class HostedStartupTest{
             cleanups[0]++;
         });
         try{
-            DizzyEngine.initHosted(640, 480, null);
+            DizzyEngine.initHosted(640, 480, new Shader("void main(){}", "void main(){}"));
             check(calls[0]==1 && calls[1]==1, "Layer startup events missing or duplicated");
             check(blend[0]==GL.GL_SRC_ALPHA && blend[1]==GL.GL_ONE_MINUS_SRC_ALPHA,
                 "Incorrect alpha blending");
             DizzyEngine.hostedChar(3, 0x1f600);
             DizzyEngine.hostedCharMods(3, 65, 2);
             check(calls[2]==1 && calls[3]==1, "Hosted character events missing or duplicated");
+            DizzyEngine.hostedScroll(3, -1.25, 2.5);
+            check(calls[4]==1, "Hosted scroll event missing or duplicated");
+            DizzyEngine.renderHosted(0.016);
+            check(calls[5]==1 && framebuffer[0]==7, "Host framebuffer not restored on return");
+            failRender[0] = true;
+            try{
+                DizzyEngine.renderHosted(0.016);
+                throw new AssertionError("Layer exception did not propagate");
+            }catch(RuntimeException ex){
+                check(ex==renderFailure, "Unexpected render failure");
+            }
+            check(framebuffer[0]==7, "Host framebuffer not restored after layer failure");
             checkBatchBuffers();
             check(updates.await(2, TimeUnit.SECONDS), "Registered update threads did not run");
         }finally{

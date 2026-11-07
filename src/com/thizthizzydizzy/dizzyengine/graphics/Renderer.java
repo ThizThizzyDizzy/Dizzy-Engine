@@ -527,9 +527,12 @@ public class Renderer{
         };
     }
     public static void initElements(){
-        for(Element e : elements.values())e.init();
-
+        restoreElements();
         DizzyEngine.addShutdownHook(Renderer::cleanupElements);
+    }
+    /** Recreate element buffers after context loss without adding cleanup hooks. */
+    public static void restoreElements(){
+        for(Element e : elements.values())e.init();
     }
     public static void cleanupElements(){
         for(Element e : elements.values())e.cleanup();

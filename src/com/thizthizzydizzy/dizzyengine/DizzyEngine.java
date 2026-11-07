@@ -219,13 +219,8 @@ public class DizzyEngine{
         mainThread = Thread.currentThread();
         screenSize.set(width, height);
         headless = false;
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-        glEnable(GL_STENCIL_TEST);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        Renderer.initElements();
-        Renderer.setDefaultShader(defaultShader);
+        ResourceManager.invalidateContextTextures();
+        initHostedGraphics(defaultShader, false);
         synchronized(layers){
             wrapEvent(layers, DizzyLayer::init);
             wrapEvent(layers, layer -> layer.onScreenSize(screenSize));
@@ -234,6 +229,24 @@ public class DizzyEngine{
         for(var thread : unmanagedUpdateThreads)thread.start();
         for(var thread : fixedUpdateThreads)thread.start();
         startupLatch.countDown();
+    }
+    /** Rebuild graphics after context loss without restarting layers or update threads.
+     * Call on the host render thread with the replacement context current.
+     */
+    public static void restoreHostedGraphics(Shader defaultShader){
+        mainThread = Thread.currentThread();
+        ResourceManager.invalidateContextTextures();
+        initHostedGraphics(defaultShader, true);
+    }
+    private static void initHostedGraphics(Shader defaultShader, boolean restoring){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        if(restoring)Renderer.restoreElements();
+        else Renderer.initElements();
+        Renderer.setDefaultShader(defaultShader);
     }
     /** Call on the host render thread while its GL context is current, after rendering has stopped.
      * Waits for update callbacks and their cleanup to finish before running resource cleanup hooks once.
@@ -269,18 +282,28 @@ public class DizzyEngine{
         synchronized(layers){wrapEvent(layers, layer -> layer.onScreenSize(screenSize));}
     }
     public static void renderHosted(double deltaTime){
-        PerformanceTracker.reset();
-        Logger.reset();
-        glViewport(0, 0, screenSize.x, screenSize.y);
-        glClearColor(0, 0, 0, 1);
-        glStencilMask(0xff);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glStencilMask(0);
-        synchronized(layers){
-            wrapEvent(layers, layer -> {Renderer.reset();layer.render(deltaTime);});
+        int hostFramebuffer = glGetInteger(GL_FRAMEBUFFER_BINDING);
+        try{
+            PerformanceTracker.reset();
+            Logger.reset();
+            glViewport(0, 0, screenSize.x, screenSize.y);
+            glClearColor(0, 0, 0, 1);
+            glStencilMask(0xff);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            glStencilMask(0);
+            synchronized(layers){
+                wrapEvent(layers, layer -> {
+                    glBindFramebuffer(GL_FRAMEBUFFER, hostFramebuffer);
+                    Renderer.reset();
+                    layer.render(deltaTime);
+                });
+            }
+        }finally{
+            glBindFramebuffer(GL_FRAMEBUFFER, hostFramebuffer);
         }
     }
     public static void hostedCursor(int id, double x, double y){dispatchHosted(layer -> layer.onCursorPos(id, x, y));}
+    public static void hostedScroll(int id, double xoffset, double yoffset){dispatchHosted(layer -> layer.onScroll(id, xoffset, yoffset));}
     public static void hostedMouseButton(int id, int button, int action, int mods){dispatchHosted(layer -> layer.onMouseButton(id, button, action, mods));}
     public static void hostedChar(int id, int codepoint){dispatchHosted(layer -> layer.onChar(id, codepoint));}
     public static void hostedCharMods(int id, int codepoint, int mods){dispatchHosted(layer -> layer.onCharMods(id, codepoint, mods));}
