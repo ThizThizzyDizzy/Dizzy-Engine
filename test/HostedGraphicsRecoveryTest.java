@@ -1,6 +1,7 @@
 import com.thizthizzydizzy.dizzyengine.*;
 import com.thizthizzydizzy.dizzyengine.graphics.*;
 import com.thizthizzydizzy.dizzyengine.graphics.text.*;
+import com.thizthizzydizzy.dizzyengine.graphics.image.ImageRenderer;
 import com.thizthizzydizzy.dizzyengine.platform.*;
 import java.lang.reflect.Proxy;
 import com.thizthizzydizzy.dizzyengine.ui.UILayer;
@@ -16,9 +17,15 @@ public class HostedGraphicsRecoveryTest{
         Set<Integer> arrays = new HashSet<>(), textures = new HashSet<>();
         Set<Integer> programs = new HashSet<>(), shaders = new HashSet<>();
         int[] next = {1}, uploads = {0}, draws = {0}, initializations = {0}, restores = {0};
+        int[] framebuffer = {7}, postImageDraws = {0}, deletedFramebuffers = {0};
+        boolean[] imageDraw = {false};
         GL.setBackend((GLBackend)Proxy.newProxyInstance(GLBackend.class.getClassLoader(),
             new Class<?>[]{GLBackend.class}, (proxy, method, values) -> {
                 switch(method.getName()){
+                    case "glGetInteger": return framebuffer[0];
+                    case "glBindFramebuffer": framebuffer[0] = (Integer)values[1]; break;
+                    case "glCheckFramebufferStatus": return GL.GL_FRAMEBUFFER_COMPLETE;
+                    case "glDeleteFramebuffers": deletedFramebuffers[0]++; break;
                     case "glCreateProgram": {
                         int id = next[0]++;
                         programs.add(id);
@@ -52,7 +59,12 @@ public class HostedGraphicsRecoveryTest{
                         check((Integer)values[1]==0 || textures.contains((Integer)values[1]), "Stale atlas");
                         break;
                     case "glTexImage2D": uploads[0]++; break;
-                    case "glDrawElements": draws[0]++; break;
+                    case "glDrawElements":
+                        if(imageDraw[0]){
+                            check(framebuffer[0]==7, "Drawing after offscreen rendering missed host framebuffer");
+                            postImageDraws[0]++;
+                        }else draws[0]++;
+                        break;
                     case "glGetShaderiv": case "glGetProgramiv": ((int[])values[2])[0] = 1; break;
                 }
                 if(method.getReturnType()==int.class)return next[0]++;
@@ -73,6 +85,17 @@ public class HostedGraphicsRecoveryTest{
                 restores[0]++;
             }
             public void render(double deltaTime){
+                check(framebuffer[0]==7, "Layer did not enter host framebuffer");
+                new ImageRenderer(){protected void draw(){}}.renderImage(1, 1);
+                imageDraw[0] = true;
+                try{GL.glDrawElements(GL.GL_TRIANGLES, 0, GL.GL_UNSIGNED_INT, 0L);}
+                finally{imageDraw[0] = false;}
+                RuntimeException failure = new RuntimeException("expected draw failure");
+                try{
+                    new ImageRenderer(){protected void draw(){throw failure;}}.renderImage(1, 1);
+                    throw new AssertionError("Draw failure was swallowed");
+                }catch(RuntimeException ex){check(ex==failure, "Wrong draw failure");}
+                check(framebuffer[0]==7, "Failed offscreen draw lost host framebuffer");
                 check(Renderer.getFont()==font, "Renderer lost the retained font");
                 check(font.getCharacter('A')==retained, "Retained glyph reference replaced");
                 Renderer.bindTexture(font.texture);
@@ -105,8 +128,9 @@ public class HostedGraphicsRecoveryTest{
                 check(uiRestores[0]==2*(i+1), "Missing UI restoration callbacks");
                 DizzyEngine.renderHosted(0.016);
             }
+            check(postImageDraws[0]==3 && deletedFramebuffers[0]==6, "Offscreen draw or cleanup missing");
             check(initializations[0]==1, "Context recovery restarted the layer");
-            check(uploads[0]==3 && draws[0]==6, "Atlas upload or glyph draw missing");
+            check(uploads[0]==9 && draws[0]==6, "Atlas upload or glyph draw missing");
         }finally{
             DizzyEngine.shutdownHosted();
         }
