@@ -219,9 +219,20 @@ public class DizzyEngine{
         mainThread = Thread.currentThread();
         screenSize.set(width, height);
         headless = false;
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
         Renderer.initElements();
         Renderer.setDefaultShader(defaultShader);
+        synchronized(layers){
+            wrapEvent(layers, DizzyLayer::init);
+            wrapEvent(layers, layer -> layer.onScreenSize(screenSize));
+        }
         running = true;
+        for(var thread : unmanagedUpdateThreads)thread.start();
+        for(var thread : fixedUpdateThreads)thread.start();
         startupLatch.countDown();
     }
     public static void resizeHosted(int width, int height){
